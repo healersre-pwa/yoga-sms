@@ -1,8 +1,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { ClassSession, Instructor } from '../types';
+import { ClassSession, Instructor, User } from '../types';
 import { useApp } from '../contexts/AppContext';
-import { X, Check, Trash2, Plus, Users, UserCog, Camera, Loader2, Calendar, ArrowRight, User, Coins, AlertCircle, Wrench, MessageSquare, BellOff } from 'lucide-react';
+import { X, Check, Trash2, Plus, Users, UserCog, Camera, Loader2, Calendar, ArrowRight, User as UserIcon, Coins, AlertCircle, Wrench, MessageSquare, BellOff, Search } from 'lucide-react';
 import { SMSNotificationModal } from './SMSNotificationModal';
 
 interface Props {
@@ -47,8 +47,12 @@ export const AdminManageModal: React.FC<Props> = ({ session, instructor, targetD
   const [isAddingInstructor, setIsAddingInstructor] = useState(false);
   const [newInstName, setNewInstName] = useState('');
   const [newInstBio, setNewInstBio] = useState('');
-  const [selectedStudentToAdd, setSelectedStudentToAdd] = useState<string>('');
   const [uploadingInstructorId, setUploadingInstructorId] = useState<string | null>(null);
+
+  // Student Add Search State
+  const [studentSearchTerm, setStudentSearchTerm] = useState('');
+  const [selectedStudentToAdd, setSelectedStudentToAdd] = useState<User | null>(null);
+  const [isSearchingStudent, setIsSearchingStudent] = useState(false);
 
   // SMS Modal State
   const [showSMSModal, setShowSMSModal] = useState(false);
@@ -63,6 +67,18 @@ export const AdminManageModal: React.FC<Props> = ({ session, instructor, targetD
   // Ghost detection irrelevant in drop-in mode unless ID not found in DB
   const ghostStudentCount = dailyBookings.length - enrolledStudents.length;
   const hasGhostStudents = ghostStudentCount > 0;
+
+  // Filter available students based on search term (Name, ID, Phone)
+  const filteredAvailableStudents = availableStudents.filter(s => {
+      const term = studentSearchTerm.toLowerCase();
+      if (!term) return false;
+      return (
+          s.name.toLowerCase().includes(term) ||
+          s.id.toLowerCase().includes(term) ||
+          s.username?.toLowerCase().includes(term) ||
+          s.phoneNumber?.includes(term)
+      );
+  });
 
   const handleSave = async () => {
     // 1. Validation: Check Base Instructor Conflict (if changed)
@@ -349,7 +365,7 @@ export const AdminManageModal: React.FC<Props> = ({ session, instructor, targetD
                             </>
                         ) : (
                             <div className="flex flex-col items-center justify-center h-[88px] text-gray-400">
-                                <User size={32} className="mb-1 opacity-20" />
+                                <UserIcon size={32} className="mb-1 opacity-20" />
                                 <span className="text-xs">無代課</span>
                             </div>
                         )}
@@ -446,24 +462,76 @@ export const AdminManageModal: React.FC<Props> = ({ session, instructor, targetD
                     </button>
                 </div>
 
-                <div className="mb-4 flex gap-2">
-                    <select value={selectedStudentToAdd} onChange={(e) => setSelectedStudentToAdd(e.target.value)} className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 bg-white">
-                        <option value="">選擇學生...</option>
-                        {availableStudents.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                    </select>
+                {/* Add Student Section */}
+                <div className="mb-4 flex gap-2 relative">
+                    <div className="flex-1 relative">
+                        <div className="flex items-center border border-gray-300 rounded-lg bg-white focus-within:ring-2 focus-within:ring-zen-500 overflow-hidden">
+                            <Search size={16} className="ml-3 text-gray-400 shrink-0"/>
+                            <input 
+                                type="text"
+                                placeholder={selectedStudentToAdd ? selectedStudentToAdd.name : "搜尋學生 (姓名/ID/電話)..."}
+                                value={studentSearchTerm}
+                                onChange={(e) => {
+                                    setStudentSearchTerm(e.target.value);
+                                    setIsSearchingStudent(true);
+                                    if(selectedStudentToAdd) setSelectedStudentToAdd(null);
+                                }}
+                                onFocus={() => setIsSearchingStudent(true)}
+                                className="w-full p-2 text-sm outline-none text-gray-900 bg-transparent"
+                            />
+                            {selectedStudentToAdd && (
+                                <button onClick={() => { setSelectedStudentToAdd(null); setStudentSearchTerm(''); }} className="p-2 text-gray-400 hover:text-red-500">
+                                    <X size={16}/>
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Search Dropdown */}
+                        {isSearchingStudent && studentSearchTerm && (
+                            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
+                                {filteredAvailableStudents.length > 0 ? (
+                                    filteredAvailableStudents.map(s => (
+                                        <div 
+                                            key={s.id}
+                                            onClick={() => {
+                                                setSelectedStudentToAdd(s);
+                                                setStudentSearchTerm(''); 
+                                                setIsSearchingStudent(false);
+                                            }}
+                                            className="p-2 hover:bg-gray-50 cursor-pointer flex justify-between items-center border-b border-gray-50 last:border-0"
+                                        >
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-bold text-gray-800">{s.name}</span>
+                                                <span className="text-xs text-gray-400">@{s.username || s.id}</span>
+                                            </div>
+                                            {s.phoneNumber && <span className="text-xs text-gray-400 font-mono">{s.phoneNumber}</span>}
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="p-3 text-xs text-gray-400 text-center">找不到符合的學生</div>
+                                )}
+                            </div>
+                        )}
+                        {/* Backdrop to close search */}
+                        {isSearchingStudent && (
+                            <div className="fixed inset-0 z-40" onClick={() => setIsSearchingStudent(false)}></div>
+                        )}
+                    </div>
+
                     <button 
                         disabled={!selectedStudentToAdd} 
                         onClick={async () => { 
                             if(selectedStudentToAdd) { 
-                                const result = await bookClass(currentSession.id, selectedStudentToAdd, targetDate); 
+                                const result = await bookClass(currentSession.id, selectedStudentToAdd.id, targetDate); 
                                 if (result.success) {
-                                    setSelectedStudentToAdd(''); 
+                                    setSelectedStudentToAdd(null);
+                                    setStudentSearchTerm('');
                                 } else if (result.message) {
                                     alert(result.message);
                                 }
                             }
                         }} 
-                        className="bg-zen-600 text-white px-4 py-2 rounded-lg text-sm font-bold disabled:opacity-50"
+                        className="bg-zen-600 text-white px-4 py-2 rounded-lg text-sm font-bold disabled:opacity-50 whitespace-nowrap"
                     >
                         加入
                     </button>

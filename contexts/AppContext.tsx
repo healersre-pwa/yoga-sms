@@ -44,6 +44,16 @@ export const useApp = () => {
   return context;
 };
 
+// Helper function to generate sequential IDs (filling gaps)
+const generateSequentialId = (prefix: string, existingIds: string[]): string => {
+    const idSet = new Set(existingIds);
+    let num = 1;
+    while (idSet.has(`${prefix}${num}`)) {
+        num++;
+    }
+    return `${prefix}${num}`;
+};
+
 export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User>(GUEST_USER);
   const [isLoginModalOpen, setLoginModalOpen] = useState(false);
@@ -669,7 +679,10 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
   };
 
   const addClass = async (classData: any) => {
-    const newId = doc(collection(db, 'classes')).id;
+    // Generate new ID: class1, class2, class3... and fill gaps
+    const existingClassIds = [...activeClasses, ...archivedClasses].map(c => c.id);
+    const newId = generateSequentialId('class', existingClassIds);
+
     const newClass = {
         ...classData,
         id: newId,
@@ -706,7 +719,10 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
           });
 
           const todayStr = formatDateKey(new Date());
-          const newId = doc(collection(db, 'classes')).id;
+          
+          // Generate new ID for the new active class instance
+          const existingClassIds = [...activeClasses, ...archivedClasses].map(c => c.id);
+          const newId = generateSequentialId('class', existingClassIds);
           
           const newClass = {
               id: newId,
@@ -798,7 +814,10 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
   };
 
   const addInstructor = (data: Partial<Instructor>) => {
-      const id = doc(collection(db, 'instructors')).id;
+      // Generate new ID: instructor1, instructor2... and fill gaps
+      const existingInstIds = instructors.map(i => i.id);
+      const id = generateSequentialId('instructor', existingInstIds);
+
       const newInst = {
           id,
           name: data.name || 'New Instructor',
@@ -822,8 +841,13 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
           return ""; 
       }
 
+      // Generate Sequential ID: student1, student2... and fill gaps
+      // We check ALL users to ensure ID uniqueness across the collection
+      const existingUserIds = allUsers.map(u => u.id);
+      const id = generateSequentialId('student', existingUserIds);
+
       if (!d.role) d.role = UserRole.STUDENT;
-      const id = doc(collection(db, 'users')).id;
+      // Use explicit ID here
       const newS = { 
           id, 
           role: UserRole.STUDENT, 
@@ -837,6 +861,7 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
           username: targetUsername,
           ...d
       };
+      
       try { setDoc(doc(db, 'users', id), newS); } catch(e) { console.error("Add Student Error:", e); alert("新增學生失敗，請檢查資料。"); return ""; }
       return id;
   };

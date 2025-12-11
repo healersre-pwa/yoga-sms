@@ -2,7 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { User, ClassSession, MembershipType } from '../types';
-import { X, Search, UserPlus, CreditCard, Lock, Trash2, AlertTriangle, User as UserIcon, Save, Calendar, Clock, MapPin, Camera, Loader2, ChevronLeft, KeyRound, Check, Coins, Infinity, Phone } from 'lucide-react';
+import { X, Search, UserPlus, CreditCard, Lock, Trash2, AlertTriangle, User as UserIcon, Save, Calendar, Clock, MapPin, Camera, Loader2, ChevronLeft, KeyRound, Check, Coins, Infinity, Phone, History, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface Props {
   onClose: () => void;
@@ -14,6 +14,7 @@ export const StudentDirectoryModal: React.FC<Props> = ({ onClose }) => {
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showHistory, setShowHistory] = useState(false); // Toggle for history
   
   // Reset Password UI State
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -35,40 +36,61 @@ export const StudentDirectoryModal: React.FC<Props> = ({ onClose }) => {
     unlimitedExpiry: ''
   });
 
-  const filteredStudents = students.filter(s => 
-    s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    s.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.phoneNumber?.includes(searchTerm)
-  );
+  const filteredStudents = students.filter(s => {
+    const term = searchTerm.toLowerCase();
+    return (
+        s.name.toLowerCase().includes(term) || 
+        s.username?.toLowerCase().includes(term) ||
+        s.id.toLowerCase().includes(term) || // Added ID search
+        s.phoneNumber?.includes(term)
+    );
+  });
 
   const selectedStudent = students.find(s => s.id === selectedStudentId);
   const isEditing = selectedStudentId || isCreating;
   
-  // Get classes the selected student has booked (flattened by date)
-  const studentBookings = selectedStudentId 
+  // Get classes the selected student has booked
+  const allBookings = selectedStudentId 
     ? classes.flatMap(c => {
         const bookings = (c.bookings || {}) as Record<string, string[]>;
         return Object.entries(bookings)
             .filter(([date, userIds]) => userIds.includes(selectedStudentId))
             .map(([date]) => {
                 const [y, m, d] = date.split('-').map(Number);
+                const [h, min] = c.startTimeStr.split(':').map(Number);
+                const dateObj = new Date(y, m - 1, d);
+                // Create a precise date object for sorting including time
+                const fullDate = new Date(y, m - 1, d, h, min);
+                
                 return {
                     classId: c.id,
                     title: c.title,
                     startTime: c.startTimeStr,
                     dayOfWeek: c.dayOfWeek,
                     dateKey: date,
-                    dateObj: new Date(y, m - 1, d)
+                    dateObj: dateObj,
+                    fullDate: fullDate
                 };
             });
-    }).sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime())
+    })
     : [];
+
+  // Split into Upcoming and History
+  const now = new Date();
+  const upcomingBookings = allBookings
+    .filter(b => b.fullDate >= now)
+    .sort((a, b) => a.fullDate.getTime() - b.fullDate.getTime()); // Ascending for upcoming
+
+  const historyBookings = allBookings
+    .filter(b => b.fullDate < now)
+    .sort((a, b) => b.fullDate.getTime() - a.fullDate.getTime()); // Descending for history
 
   const handleSelectStudent = (student: User) => {
     setSelectedStudentId(student.id);
     setIsCreating(false);
     setShowDeleteConfirm(false); 
-    setShowResetConfirm(false); // Reset this too
+    setShowResetConfirm(false);
+    setShowHistory(false); // Reset history toggle
     setFormData({
         name: student.name,
         username: student.username,
@@ -161,6 +183,34 @@ export const StudentDirectoryModal: React.FC<Props> = ({ onClose }) => {
   // Membership Logic
   const changeMembership = (type: MembershipType) => {
       setFormData(prev => ({ ...prev, membershipType: type }));
+  };
+
+  const renderBookingItem = (bk: any) => {
+      const dayMap = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
+      const dayStr = bk.dayOfWeek === 7 ? '週日' : dayMap[bk.dayOfWeek];
+      
+      return (
+          <div key={`${bk.classId}-${bk.dateKey}`} className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-xl hover:border-zen-300 transition-colors shadow-sm">
+              <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-1">
+                      <span className="text-sm font-bold text-zen-700 bg-zen-50 px-2.5 py-1 rounded-full">
+                          {dayStr} {bk.startTime}
+                      </span>
+                      <span className="text-sm text-gray-400 flex items-center gap-1">
+                          {bk.dateObj.toLocaleDateString('zh-TW', {month:'numeric', day:'numeric'})}
+                      </span>
+                  </div>
+                  <p className="text-base font-bold text-gray-800">{bk.title}</p>
+              </div>
+              <button 
+                  onClick={() => cancelClass(bk.classId, selectedStudentId, bk.dateObj)}
+                  className="text-red-500 hover:bg-red-50 p-3 rounded-xl transition-colors bg-white border border-red-100"
+                  title="取消此預約"
+              >
+                  <Trash2 size={20} />
+              </button>
+          </div>
+      );
   };
 
   return (
@@ -447,42 +497,48 @@ export const StudentDirectoryModal: React.FC<Props> = ({ onClose }) => {
                             <div className="pt-8 mt-8 border-t border-gray-100">
                                 <h3 className="text-base font-bold text-gray-700 mb-4 flex items-center gap-2">
                                     <Calendar size={20} />
-                                    已預約 ({studentBookings.length})
+                                    預約管理
                                 </h3>
                                 
-                                {studentBookings.length === 0 ? (
+                                {(upcomingBookings.length === 0 && historyBookings.length === 0) ? (
                                     <p className="text-sm text-gray-400 italic bg-gray-50 p-4 rounded-xl border border-dashed border-gray-200 text-center">
                                         尚無預約。
                                     </p>
                                 ) : (
-                                    <div className="space-y-3">
-                                        {studentBookings.map((bk, idx) => {
-                                            const dayMap = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
-                                            const dayStr = bk.dayOfWeek === 7 ? '週日' : dayMap[bk.dayOfWeek];
-                                            
-                                            return (
-                                                <div key={`${bk.classId}-${bk.dateKey}-${idx}`} className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-xl hover:border-zen-300 transition-colors shadow-sm">
-                                                    <div className="flex-1">
-                                                        <div className="flex items-center gap-3 mb-1">
-                                                            <span className="text-sm font-bold text-zen-700 bg-zen-50 px-2.5 py-1 rounded-full">
-                                                                {dayStr} {bk.startTime}
-                                                            </span>
-                                                            <span className="text-sm text-gray-400 flex items-center gap-1">
-                                                                {bk.dateObj.toLocaleDateString('zh-TW', {month:'numeric', day:'numeric'})}
-                                                            </span>
-                                                        </div>
-                                                        <p className="text-base font-bold text-gray-800">{bk.title}</p>
+                                    <div className="space-y-4">
+                                        {/* Upcoming Bookings */}
+                                        {upcomingBookings.length > 0 && (
+                                            <div className="space-y-3">
+                                                <h4 className="text-sm font-bold text-zen-600 uppercase tracking-wider flex items-center gap-2">
+                                                    <Clock size={14} /> 即將開始 ({upcomingBookings.length})
+                                                </h4>
+                                                {upcomingBookings.map((bk, idx) => renderBookingItem(bk))}
+                                            </div>
+                                        )}
+                                        
+                                        {/* History Toggle */}
+                                        {historyBookings.length > 0 && (
+                                            <div className="pt-2">
+                                                <button 
+                                                    onClick={() => setShowHistory(!showHistory)}
+                                                    className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-gray-700 w-full p-2 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors justify-center border border-gray-200"
+                                                >
+                                                    <History size={16} />
+                                                    {showHistory ? '隱藏歷史紀錄' : `查看歷史紀錄 (${historyBookings.length})`}
+                                                    {showHistory ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                                </button>
+                                                
+                                                {showHistory && (
+                                                    <div className="space-y-3 mt-3 animate-in slide-in-from-top-2 fade-in">
+                                                         {historyBookings.map((bk, idx) => (
+                                                             <div key={`${bk.classId}-${bk.dateKey}-hist`} className="opacity-75 hover:opacity-100 transition-opacity">
+                                                                {renderBookingItem(bk)}
+                                                             </div>
+                                                         ))}
                                                     </div>
-                                                    <button 
-                                                        onClick={() => cancelClass(bk.classId, selectedStudentId, bk.dateObj)}
-                                                        className="text-red-500 hover:bg-red-50 p-3 rounded-xl transition-colors bg-white border border-red-100"
-                                                        title="取消此預約"
-                                                    >
-                                                        <Trash2 size={20} />
-                                                    </button>
-                                                </div>
-                                            );
-                                        })}
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
