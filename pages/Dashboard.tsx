@@ -1,0 +1,371 @@
+
+import React, { useState, useEffect } from 'react';
+import { useApp } from '../contexts/AppContext';
+import { UserRole, ClassSession } from '../types';
+import { ClassCard } from '../components/ClassCard';
+import { AdminManageModal } from '../components/AdminManageModal';
+import { StudentDirectoryModal } from '../components/StudentDirectoryModal';
+import { ClassEditorModal } from '../components/ClassEditorModal';
+import { InstructorDirectoryModal } from '../components/InstructorDirectoryModal';
+import { DataExportModal } from '../components/DataExportModal';
+import { Users, PlusCircle, Calendar, LayoutGrid, List, WifiOff, ChevronLeft, ChevronRight, RotateCcw, Plus, UserCog, Download, History, Loader2 } from 'lucide-react';
+
+export const Dashboard: React.FC = () => {
+  const { classes, instructors, currentUser, bookClass, cancelClass, dataSource, formatDateKey, allClassesHistory, fetchArchivedClasses } = useApp();
+  
+  const [managingClassSession, setManagingClassSession] = useState<ClassSession | null>(null);
+  const [managingDate, setManagingDate] = useState<Date | null>(null);
+  
+  const [isClassEditorOpen, setIsClassEditorOpen] = useState(false);
+  const [editingClassId, setEditingClassId] = useState<string | null>(null);
+  const [newClassDay, setNewClassDay] = useState<number>(1); 
+  
+  const [showStudentDirectory, setShowStudentDirectory] = useState(false);
+  const [showInstructorDirectory, setShowInstructorDirectory] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  
+  const [viewMode, setViewMode] = useState<'normal' | 'compact'>('compact');
+
+  const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => {
+    const now = new Date();
+    const day = now.getDay() || 7; 
+    const diff = now.getDate() - day + 1; 
+    const monday = new Date(now.setDate(diff));
+    monday.setHours(0, 0, 0, 0);
+    return monday;
+  });
+
+  // Default to today (1-7), prevent null to remove "All" view
+  const [selectedDay, setSelectedDay] = useState<number>(() => {
+    return new Date().getDay() || 7;
+  });
+
+  useEffect(() => {
+    setViewMode('compact');
+  }, []);
+
+  const changeWeek = (offset: number) => {
+    const newDate = new Date(currentWeekStart);
+    newDate.setDate(newDate.getDate() + (offset * 7));
+    setCurrentWeekStart(newDate);
+  };
+
+  const resetToThisWeek = () => {
+    const now = new Date();
+    const day = now.getDay() || 7;
+    const diff = now.getDate() - day + 1;
+    const monday = new Date(now.setDate(diff));
+    monday.setHours(0, 0, 0, 0);
+    setCurrentWeekStart(monday);
+  };
+
+  const getWeekRangeLabel = () => {
+    const start = currentWeekStart;
+    const end = new Date(start);
+    end.setDate(end.getDate() + 6);
+    
+    const format = (d: Date) => {
+        return `${d.getFullYear()}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getDate().toString().padStart(2, '0')}`;
+    };
+
+    return `${format(start)} - ${format(end)}`;
+  };
+
+  const getDateForDayColumn = (dayId: number) => {
+    const date = new Date(currentWeekStart);
+    date.setDate(currentWeekStart.getDate() + (dayId - 1));
+    return date;
+  };
+
+  const handleClassAction = async (session: ClassSession, targetDate: Date) => {
+    const dateKey = formatDateKey(targetDate);
+    const dailyBookings = session.bookings?.[dateKey] || [];
+    const isBooked = dailyBookings.includes(currentUser.id);
+
+    if (currentUser.role === UserRole.ADMIN) {
+      setManagingClassSession(session);
+      setManagingDate(targetDate);
+    } else {
+      if (isBooked) {
+        await cancelClass(session.id, undefined, targetDate);
+      } else {
+        const result = await bookClass(session.id, undefined, targetDate);
+        if (!result.success && result.message) {
+            alert(result.message);
+        }
+      }
+    }
+  };
+
+  const handleEditClass = (sessionId: string) => {
+    setEditingClassId(sessionId);
+    setIsClassEditorOpen(true);
+  };
+
+  const handleCreateClass = (dayId?: number) => {
+    setEditingClassId(null);
+    const today = new Date().getDay() || 7;
+    setNewClassDay(dayId || today);
+    setIsClassEditorOpen(true);
+  };
+
+  const handleDayFilter = (dayId: number) => {
+      setSelectedDay(dayId); 
+  };
+
+  const handleLoadHistory = async () => {
+      setIsLoadingHistory(true);
+      await fetchArchivedClasses();
+      setIsLoadingHistory(false);
+      alert("歷史資料載入完成！您現在可以查看過往的課程紀錄。");
+  };
+
+  const days = [
+    { id: 1, name: '週一' },
+    { id: 2, name: '週二' },
+    { id: 3, name: '週三' },
+    { id: 4, name: '週四' },
+    { id: 5, name: '週五' },
+    { id: 6, name: '週六' },
+    { id: 7, name: '週日' },
+  ];
+
+  const isStudent = currentUser.role === UserRole.STUDENT;
+
+  return (
+    <div className="space-y-6 pb-20">
+      <header className="mb-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div className="min-w-0">
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 flex items-center gap-3">
+                  <span className="whitespace-nowrap">
+                    {currentUser.role === UserRole.ADMIN ? '教室管理看板' : '課程預約'}
+                  </span>
+                  {dataSource === 'local' && (
+                      <span className="text-[10px] bg-red-100 text-red-600 px-2 py-1 rounded-full border border-red-200 flex items-center gap-1 font-mono align-middle whitespace-nowrap">
+                          <WifiOff size={10} /> 離線
+                      </span>
+                  )}
+              </h1>
+              <p className="text-gray-500 mt-2 flex items-center gap-2 text-base font-medium">
+                  <Calendar size={18} className="text-zen-500 shrink-0"/>
+                  <span>
+                    {currentUser.role === UserRole.ADMIN 
+                        ? '管理每週固定課程、安排師資與學生資料。' 
+                        : ' (兩日前 09:00 開放預約)。'}
+                  </span>
+              </p>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto overflow-x-auto pb-1 sm:pb-0">
+               
+               <div className="flex items-center bg-white p-1 rounded-xl border border-gray-200 shadow-sm flex-1 sm:flex-none justify-center shrink-0">
+                  <button onClick={() => changeWeek(-1)} className="p-3 hover:bg-gray-100 rounded-lg text-gray-500">
+                      <ChevronLeft size={20} />
+                  </button>
+                  <div className="px-3 font-bold text-base text-gray-700 min-w-[160px] md:min-w-[180px] text-center font-mono tracking-tight whitespace-nowrap">
+                      {getWeekRangeLabel()}
+                  </div>
+                  <button onClick={() => changeWeek(1)} className="p-3 hover:bg-gray-100 rounded-lg text-gray-500">
+                      <ChevronRight size={20} />
+                  </button>
+                  <div className="w-px h-6 bg-gray-200 mx-1"></div>
+                  <button onClick={resetToThisWeek} className="p-3 hover:bg-gray-100 rounded-lg text-gray-500" title="回到本週">
+                      <RotateCcw size={18} />
+                  </button>
+               </div>
+
+               <div className="bg-white p-1 rounded-xl border border-gray-200 shadow-sm flex items-center justify-center sm:justify-start shrink-0">
+                  <button 
+                      onClick={() => setViewMode('normal')}
+                      className={`p-3 rounded-lg transition-all ${viewMode === 'normal' ? 'bg-zen-100 text-zen-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                      title="標準檢視"
+                  >
+                      <LayoutGrid size={20} />
+                  </button>
+                  <button 
+                      onClick={() => setViewMode('compact')}
+                      className={`p-3 rounded-lg transition-all ${viewMode === 'compact' ? 'bg-zen-100 text-zen-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                      title="精簡檢視"
+                  >
+                      <List size={20} />
+                  </button>
+               </div>
+
+              {currentUser.role === UserRole.ADMIN && (
+                  <div className="flex gap-2 shrink-0">
+                      <button 
+                          onClick={() => handleCreateClass()} 
+                          className="flex items-center justify-center gap-2 bg-zen-600 text-white px-5 py-3 rounded-xl font-bold hover:bg-zen-700 shadow-lg shadow-zen-200 transition-all text-base whitespace-nowrap"
+                      >
+                          <PlusCircle size={20} />
+                          <span className="hidden lg:inline">新增課程</span>
+                      </button>
+                      
+                      <button 
+                          onClick={() => setShowInstructorDirectory(true)}
+                          className="flex items-center justify-center gap-2 bg-white border border-gray-200 shadow-sm text-gray-700 px-5 py-3 rounded-xl font-bold hover:bg-gray-50 hover:border-gray-300 transition-all text-base whitespace-nowrap"
+                          title="師資管理"
+                      >
+                          <UserCog size={20} className="text-zen-600" />
+                      </button>
+
+                      <button 
+                          onClick={() => setShowStudentDirectory(true)}
+                          className="flex items-center justify-center gap-2 bg-white border border-gray-200 shadow-sm text-gray-700 px-5 py-3 rounded-xl font-bold hover:bg-gray-50 hover:border-gray-300 transition-all text-base whitespace-nowrap"
+                          title="學生名錄"
+                      >
+                          <Users size={20} className="text-zen-600" />
+                      </button>
+
+                      <button 
+                          onClick={() => setShowExportModal(true)}
+                          className="flex items-center justify-center gap-2 bg-white border border-gray-200 shadow-sm text-gray-700 px-5 py-3 rounded-xl font-bold hover:bg-gray-50 hover:border-gray-300 transition-all text-base whitespace-nowrap"
+                          title="匯出資料與維護"
+                      >
+                          <Download size={20} className="text-zen-600" />
+                      </button>
+
+                      <button 
+                          onClick={handleLoadHistory}
+                          disabled={isLoadingHistory}
+                          className="flex items-center justify-center gap-2 bg-white border border-gray-200 shadow-sm text-gray-700 px-5 py-3 rounded-xl font-bold hover:bg-gray-50 hover:border-gray-300 transition-all text-base whitespace-nowrap"
+                          title="載入歷史資料"
+                      >
+                          {isLoadingHistory ? <Loader2 size={20} className="animate-spin text-zen-600" /> : <History size={20} className="text-zen-600" />}
+                      </button>
+                  </div>
+              )}
+          </div>
+        </div>
+      </header>
+
+      <div className="grid grid-cols-7 gap-1 px-1 mb-2 sticky top-[136px] z-20 bg-[#f4f7f6]/95 backdrop-blur py-2 md:flex md:justify-center md:gap-3 md:bg-transparent md:static">
+          {days.map(day => (
+              <button 
+                key={day.id} 
+                onClick={() => handleDayFilter(day.id)}
+                className={`flex-shrink-0 px-1 py-2 md:px-5 md:py-3 border rounded-full text-xs md:text-base font-bold shadow-sm active:scale-95 transition-all text-center
+                    ${selectedDay === day.id 
+                        ? 'bg-zen-600 text-white border-zen-600 ring-2 ring-zen-200' 
+                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 active:bg-zen-50'
+                    }`}
+              >
+                  {day.name}
+              </button>
+          ))}
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 items-start">
+        {days.map(day => {
+            if (day.id !== selectedDay) {
+                return null;
+            }
+
+            const targetDate = getDateForDayColumn(day.id);
+            const targetDateStr = formatDateKey(targetDate);
+            const isToday = new Date().toDateString() === targetDate.toDateString();
+
+            const visibleClasses = allClassesHistory
+                .filter(c => {
+                    if (Number(c.dayOfWeek) !== day.id) return false;
+                    
+                    if (c.createdAt && c.createdAt > targetDateStr) return false;
+
+                    if (c.archived && c.archivedAt && c.archivedAt <= targetDateStr) return false;
+
+                    return true;
+                })
+                .sort((a, b) => a.startTimeStr.localeCompare(b.startTimeStr));
+
+            return (
+                <div id={`day-column-${day.id}`} key={day.id} className={`flex flex-col min-h-[100px] rounded-2xl border shadow-sm relative transition-colors ${isToday ? 'bg-zen-50/60 border-zen-200' : 'bg-gray-50/50 border-gray-100'}`}>
+                    <div className={`p-3 border-b flex flex-col items-center justify-center sticky top-16 z-10 rounded-t-2xl shadow-sm h-16 ${isToday ? 'bg-zen-100 border-zen-200' : 'bg-white border-gray-100'}`}>
+                        <span className={`font-black text-lg ${isToday ? 'text-zen-800' : 'text-gray-800'}`}>{day.name}</span>
+                        <span className={`text-sm font-mono ${isToday ? 'text-zen-700 font-bold' : 'text-gray-500'}`}>
+                            {targetDate.toLocaleDateString('zh-TW', {month:'numeric', day:'numeric'})}
+                        </span>
+                        
+                        {currentUser.role === UserRole.ADMIN && (
+                            <button 
+                                onClick={() => handleCreateClass(day.id)}
+                                className="absolute top-2 right-2 text-zen-600 hover:bg-zen-50 p-2 rounded-full transition-colors"
+                                title={`新增${day.name}課程`}
+                            >
+                                <Plus size={18} />
+                            </button>
+                        )}
+                    </div>
+                    
+                    <div className={`p-3 flex-1 ${viewMode === 'compact' ? 'space-y-2' : 'space-y-4'}`}>
+                        {visibleClasses.length > 0 ? (
+                            visibleClasses.map(session => {
+                                const subId = session.substitutions?.[targetDateStr];
+                                const isSubForThisDate = !!subId;
+                                
+                                const displayInstId = isSubForThisDate ? subId : session.instructorId;
+                                
+                                const instructor = instructors.find(i => i.id === displayInstId) || {
+                                    id: 'unknown',
+                                    name: 'Unknown',
+                                    bio: '',
+                                    imageUrl: 'https://via.placeholder.com/100'
+                                };
+
+                                return (
+                                    <ClassCard 
+                                        key={session.id} 
+                                        session={session} 
+                                        instructor={instructor}
+                                        targetDate={targetDate} 
+                                        onAction={() => handleClassAction(session, targetDate)}
+                                        onEdit={() => handleEditClass(session.id)}
+                                        isCompact={viewMode === 'compact'}
+                                        displayAsSubstitute={isSubForThisDate} 
+                                    />
+                                );
+                            })
+                        ) : (
+                            <div className="flex flex-col items-center justify-center py-8 text-gray-300 text-sm italic space-y-1">
+                                <span>{isStudent ? '無' : '無課程'}</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        })}
+      </div>
+
+      {managingClassSession && instructors.length > 0 && managingDate && (
+        <AdminManageModal 
+            session={managingClassSession}
+            targetDate={managingDate}
+            instructor={instructors.find(i => i.id === managingClassSession.instructorId)!}
+            onClose={() => { setManagingClassSession(null); setManagingDate(null); }}
+        />
+      )}
+
+      {isClassEditorOpen && (
+        <ClassEditorModal 
+            key={`editor-${isClassEditorOpen ? 'open' : 'closed'}-${editingClassId || 'new'}-${newClassDay}`}
+            classId={editingClassId}
+            initialDayOfWeek={newClassDay}
+            onClose={() => setIsClassEditorOpen(false)}
+        />
+      )}
+
+      {showStudentDirectory && (
+        <StudentDirectoryModal onClose={() => setShowStudentDirectory(false)} />
+      )}
+
+      {showInstructorDirectory && (
+        <InstructorDirectoryModal onClose={() => setShowInstructorDirectory(false)} />
+      )}
+
+      {showExportModal && (
+        <DataExportModal onClose={() => setShowExportModal(false)} />
+      )}
+    </div>
+  );
+};
