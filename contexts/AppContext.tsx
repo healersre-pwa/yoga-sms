@@ -23,7 +23,9 @@ const KEYS = {
   CURRENT_USER_ID: 'zenflow_current_user_id_v2',
   LOCAL_CLASSES: 'zenflow_local_classes_backup', 
   LOCAL_INSTRUCTORS: 'zenflow_local_instructors_backup',
-  LOCAL_USERS: 'zenflow_local_users_backup'
+  LOCAL_USERS: 'zenflow_local_users_backup',
+  LOCAL_LOGO: 'zenflow_local_logo',
+  LOCAL_BG: 'zenflow_local_bg'
 };
 
 const GUEST_USER: User = {
@@ -64,7 +66,15 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
 
   const [instructors, setInstructors] = useState<Instructor[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
-  const [appLogo, setAppLogo] = useState<string | null>(null);
+  
+  // Initialize from LocalStorage to prevent flash
+  const [appLogo, setAppLogo] = useState<string | null>(() => {
+      try { return localStorage.getItem(KEYS.LOCAL_LOGO); } catch { return null; }
+  });
+  const [appBackgroundImage, setAppBackgroundImage] = useState<string | null>(() => {
+      try { return localStorage.getItem(KEYS.LOCAL_BG); } catch { return null; }
+  });
+
   const [isLoading, setIsLoading] = useState(true);
   const [dataSource, setDataSource] = useState<'firebase' | 'local'>('firebase');
 
@@ -257,7 +267,14 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
         unsubSettings = onSnapshot(doc(db, 'settings', 'global'), (doc) => {
             if (doc.exists()) {
                 const data = doc.data();
-                if (data.logoUrl) setAppLogo(data.logoUrl);
+                if (data.logoUrl) {
+                    setAppLogo(data.logoUrl);
+                    localStorage.setItem(KEYS.LOCAL_LOGO, data.logoUrl);
+                }
+                if (data.backgroundImageUrl) {
+                    setAppBackgroundImage(data.backgroundImageUrl);
+                    localStorage.setItem(KEYS.LOCAL_BG, data.backgroundImageUrl);
+                }
             }
         });
 
@@ -890,9 +907,23 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
   
   const updateAppLogo = async (base64Image: string) => {
       try {
+          // Optimistic local update
+          setAppLogo(base64Image);
+          localStorage.setItem(KEYS.LOCAL_LOGO, base64Image);
           await setDoc(doc(db, 'settings', 'global'), { logoUrl: base64Image }, { merge: true });
       } catch(e) {
           console.error("Update Logo Error:", e);
+      }
+  };
+
+  const updateAppBackgroundImage = async (base64Image: string) => {
+      try {
+          // Optimistic local update
+          setAppBackgroundImage(base64Image);
+          localStorage.setItem(KEYS.LOCAL_BG, base64Image);
+          await setDoc(doc(db, 'settings', 'global'), { backgroundImageUrl: base64Image }, { merge: true });
+      } catch(e) {
+          console.error("Update BG Error:", e);
       }
   };
 
@@ -912,11 +943,11 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
 
   return (
     <AppContext.Provider value={{
-      currentUser, classes: activeClasses, allClassesHistory, instructors, students, appLogo,
+      currentUser, classes: activeClasses, allClassesHistory, instructors, students, appLogo, appBackgroundImage,
       login, logout, validateUser, isLoginModalOpen, setLoginModalOpen,
       bookClass, cancelClass, addClass, updateClass, deleteClass, deleteClassWithRefund,
       updateClassInstructor, addInstructor, updateInstructor, deleteInstructor,
-      addStudent, updateStudent, updateUser, deleteStudent, resetStudentPassword, updateAppLogo,
+      addStudent, updateStudent, updateUser, deleteStudent, resetStudentPassword, updateAppLogo, updateAppBackgroundImage,
       getNextClassDate, formatDateKey, checkInstructorConflict, isLoading, dataSource,
       fetchArchivedClasses, pruneArchivedClasses
     }}>

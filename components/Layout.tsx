@@ -7,7 +7,7 @@ import { LoginModal } from './LoginModal';
 import { StudentProfileModal } from './StudentProfileModal';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { currentUser, logout, isLoginModalOpen, setLoginModalOpen, appLogo, updateAppLogo } = useApp();
+  const { currentUser, logout, isLoginModalOpen, setLoginModalOpen, appLogo, appBackgroundImage, updateAppLogo } = useApp();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false); 
   const menuRef = useRef<HTMLDivElement>(null);
@@ -25,6 +25,16 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Sync Body Background Image
+  useEffect(() => {
+      if (appBackgroundImage) {
+          document.body.style.backgroundImage = `url('${appBackgroundImage}')`;
+      } else {
+          // If no custom background, clear the inline style so it falls back to index.html's CSS
+          document.body.style.backgroundImage = '';
+      }
+  }, [appBackgroundImage]);
 
   const handleLogout = () => {
     logout();
@@ -75,8 +85,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const isAdmin = currentUser.role === UserRole.ADMIN;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f4f7f6]">
-      <nav className="bg-white/90 backdrop-blur-md sticky top-0 z-40 border-b border-gray-100 shadow-sm">
+    <div className="min-h-screen flex flex-col bg-transparent">
+      <nav className="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-white/50 shadow-sm">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { UserRole, ClassSession } from '../types';
 import { ClassCard } from '../components/ClassCard';
@@ -8,10 +8,10 @@ import { StudentDirectoryModal } from '../components/StudentDirectoryModal';
 import { ClassEditorModal } from '../components/ClassEditorModal';
 import { InstructorDirectoryModal } from '../components/InstructorDirectoryModal';
 import { DataExportModal } from '../components/DataExportModal';
-import { Users, PlusCircle, Calendar, LayoutGrid, List, WifiOff, ChevronLeft, ChevronRight, RotateCcw, Plus, UserCog, Download, History, Loader2 } from 'lucide-react';
+import { Users, PlusCircle, Calendar, LayoutGrid, List, WifiOff, ChevronLeft, ChevronRight, RotateCcw, Plus, UserCog, Download, History, Loader2, Image as ImageIcon } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
-  const { classes, instructors, currentUser, bookClass, cancelClass, dataSource, formatDateKey, allClassesHistory, fetchArchivedClasses } = useApp();
+  const { classes, instructors, currentUser, bookClass, cancelClass, dataSource, formatDateKey, allClassesHistory, fetchArchivedClasses, updateAppBackgroundImage } = useApp();
   
   const [managingClassSession, setManagingClassSession] = useState<ClassSession | null>(null);
   const [managingDate, setManagingDate] = useState<Date | null>(null);
@@ -24,6 +24,9 @@ export const Dashboard: React.FC = () => {
   const [showInstructorDirectory, setShowInstructorDirectory] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [isUploadingBg, setIsUploadingBg] = useState(false);
+  
+  const bgInputRef = useRef<HTMLInputElement>(null);
   
   const [viewMode, setViewMode] = useState<'normal' | 'compact'>('compact');
 
@@ -119,6 +122,48 @@ export const Dashboard: React.FC = () => {
       await fetchArchivedClasses();
       setIsLoadingHistory(false);
       alert("歷史資料載入完成！您現在可以查看過往的課程紀錄。");
+  };
+
+  const handleBgUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      if (file.size > 5 * 1024 * 1024) { alert("圖片過大 (建議 < 5MB)"); return; }
+
+      setIsUploadingBg(true);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+              const canvas = document.createElement('canvas');
+              const ctx = canvas.getContext('2d');
+              
+              // Compress/Resize for Firestore (Max 1MB doc limit usually means keep image < 500KB)
+              const MAX_WIDTH = 1280; 
+              const MAX_HEIGHT = 1280;
+              let width = img.width;
+              let height = img.height;
+
+              if (width > height) {
+                  if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+              } else {
+                  if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+              }
+
+              canvas.width = width;
+              canvas.height = height;
+              ctx?.drawImage(img, 0, 0, width, height);
+              
+              // Medium quality JPEG
+              const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+              
+              updateAppBackgroundImage(dataUrl).then(() => {
+                  setIsUploadingBg(false);
+                  alert("背景圖片已更新！");
+              });
+          };
+          img.src = event.target?.result as string;
+      };
+      reader.readAsDataURL(file);
   };
 
   const days = [
@@ -225,6 +270,16 @@ export const Dashboard: React.FC = () => {
                           title="匯出資料與維護"
                       >
                           <Download size={20} className="text-zen-600" />
+                      </button>
+
+                      <button 
+                          onClick={() => bgInputRef.current?.click()}
+                          disabled={isUploadingBg}
+                          className="flex items-center justify-center gap-2 bg-white border border-gray-200 shadow-sm text-gray-700 px-5 py-3 rounded-xl font-bold hover:bg-gray-50 hover:border-gray-300 transition-all text-base whitespace-nowrap"
+                          title="更換背景"
+                      >
+                          {isUploadingBg ? <Loader2 size={20} className="animate-spin text-zen-600" /> : <ImageIcon size={20} className="text-zen-600" />}
+                          <input ref={bgInputRef} type="file" className="hidden" accept="image/*" onChange={handleBgUpload} />
                       </button>
 
                       <button 

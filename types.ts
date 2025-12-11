@@ -68,6 +68,7 @@ export interface AppState {
   instructors: Instructor[];
   students: User[]; 
   appLogo: string | null; 
+  appBackgroundImage: string | null;
 }
 
 export interface AppContextType extends AppState {
@@ -97,6 +98,7 @@ export interface AppContextType extends AppState {
   resetStudentPassword: (id: string) => Promise<void>; 
   
   updateAppLogo: (base64Image: string) => Promise<void>;
+  updateAppBackgroundImage: (base64Image: string) => Promise<void>;
 
   getNextClassDate: (dayOfWeek: number, timeStr: string) => Date;
   formatDateKey: (date: Date) => string;
