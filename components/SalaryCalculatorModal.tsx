@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { X, Calculator, ChevronDown, ChevronRight, AlertCircle, Download, Loader2 } from 'lucide-react';
+import { X, Calculator, ChevronDown, ChevronRight, AlertCircle, Download, Loader2, User as UserIcon, UserCog } from 'lucide-react';
 
 interface Props {
   onClose: () => void;
@@ -267,7 +267,13 @@ export const SalaryCalculatorModal: React.FC<Props> = ({ onClose }) => {
                                         </td>
                                         <td className="py-4 px-3 align-middle">
                                             <div className="flex items-center gap-3">
-                                                <img src={stat.avatar} className="w-10 h-10 rounded-full object-cover bg-gray-100 border border-gray-200 shrink-0" />
+                                                {stat.avatar ? (
+                                                    <img src={stat.avatar} className="w-10 h-10 rounded-full object-cover bg-gray-100 border border-gray-200 shrink-0" />
+                                                ) : (
+                                                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 border border-gray-200 shrink-0">
+                                                        <UserCog size={16} />
+                                                    </div>
+                                                )}
                                                 <span className="font-bold text-sm text-gray-900">{stat.name}</span>
                                             </div>
                                         </td>

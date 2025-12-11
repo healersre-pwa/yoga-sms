@@ -324,7 +324,13 @@ export const AdminManageModal: React.FC<Props> = ({ session, instructor, targetD
                         }`}>
                             正課老師
                         </div>
-                        <img src={baseInstructor.imageUrl} className="w-14 h-14 rounded-full border-2 border-white shadow-sm mt-2 object-cover" />
+                        {baseInstructor.imageUrl ? (
+                            <img src={baseInstructor.imageUrl} className="w-14 h-14 rounded-full border-2 border-white shadow-sm mt-2 object-cover" />
+                        ) : (
+                            <div className="w-14 h-14 rounded-full border-2 border-white shadow-sm mt-2 bg-gray-200 flex items-center justify-center text-gray-400">
+                                <UserCog size={24} />
+                            </div>
+                        )}
                         <span className={`font-bold text-sm ${selectionTarget === 'BASE' ? 'text-green-800' : 'text-gray-700'}`}>
                             {baseInstructor.name}
                         </span>
@@ -351,7 +357,13 @@ export const AdminManageModal: React.FC<Props> = ({ session, instructor, targetD
                         </div>
                         {newSubId && subInstructor ? (
                             <>
-                                <img src={subInstructor.imageUrl} className="w-14 h-14 rounded-full border-2 border-white shadow-sm mt-2 object-cover" />
+                                {subInstructor.imageUrl ? (
+                                    <img src={subInstructor.imageUrl} className="w-14 h-14 rounded-full border-2 border-white shadow-sm mt-2 object-cover" />
+                                ) : (
+                                    <div className="w-14 h-14 rounded-full border-2 border-white shadow-sm mt-2 bg-gray-200 flex items-center justify-center text-gray-400">
+                                        <UserCog size={24} />
+                                    </div>
+                                )}
                                 <span className={`font-bold text-sm ${selectionTarget === 'SUBSTITUTE' ? 'text-amber-800' : 'text-gray-700'}`}>
                                     {subInstructor.name}
                                 </span>
@@ -365,7 +377,7 @@ export const AdminManageModal: React.FC<Props> = ({ session, instructor, targetD
                             </>
                         ) : (
                             <div className="flex flex-col items-center justify-center h-[88px] text-gray-400">
-                                <UserIcon size={32} className="mb-1 opacity-20" />
+                                <UserCog size={32} className="mb-1 opacity-20" />
                                 <span className="text-xs">無代課</span>
                             </div>
                         )}
@@ -414,16 +426,22 @@ export const AdminManageModal: React.FC<Props> = ({ session, instructor, targetD
                             >
                                 <div className="flex items-center gap-3 flex-1">
                                     <div className="relative group/avatar" onClick={(e) => { e.stopPropagation(); triggerFileUpload(inst.id); }}>
-                                        <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-200 relative">
+                                        <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-200 relative flex items-center justify-center">
                                             {uploadingInstructorId === inst.id ? (
-                                                <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                                                <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
                                                     <Loader2 size={12} className="animate-spin text-white"/>
                                                 </div>
                                             ) : (
-                                                <img src={inst.imageUrl} className="w-full h-full object-cover" />
+                                                inst.imageUrl ? (
+                                                    <img src={inst.imageUrl} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400">
+                                                        <UserCog size={16} />
+                                                    </div>
+                                                )
                                             )}
                                         </div>
-                                        <div className="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity">
+                                        <div className="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity z-20">
                                             <Camera size={14} className="text-white" />
                                         </div>
                                         <input id={`file-upload-${inst.id}`} type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, inst.id)} onClick={(e) => e.stopPropagation()} />
@@ -557,7 +575,13 @@ export const AdminManageModal: React.FC<Props> = ({ session, instructor, targetD
                     {enrolledStudents.map(s => (
                         <div key={s.id} className="flex justify-between items-center p-3 border border-gray-200 rounded-lg bg-white">
                             <div className="flex items-center gap-3 min-w-0 flex-1">
-                                <img src={s.avatarUrl} className="w-8 h-8 rounded-full bg-gray-200 object-cover shrink-0"/>
+                                {s.avatarUrl ? (
+                                    <img src={s.avatarUrl} className="w-8 h-8 rounded-full bg-gray-200 object-cover shrink-0"/>
+                                ) : (
+                                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center shrink-0 text-gray-400">
+                                        <UserIcon size={16} />
+                                    </div>
+                                )}
                                 <div className="text-sm font-bold text-black" style={{ color: 'black' }}>{s.name}</div>
                             </div>
                             <button onClick={() => cancelClass(currentSession.id, s.id, targetDate)} className="text-red-500 text-xs font-bold hover:bg-red-50 px-3 py-1.5 rounded border border-red-100 shrink-0">移除</button>

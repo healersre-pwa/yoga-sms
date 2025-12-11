@@ -274,7 +274,13 @@ export const StudentDirectoryModal: React.FC<Props> = ({ onClose }) => {
                             }`}
                         >
                             <div className="relative">
-                                <img src={student.avatarUrl} alt={student.name} className="w-12 h-12 rounded-full bg-gray-200 object-cover" />
+                                {student.avatarUrl ? (
+                                    <img src={student.avatarUrl} alt={student.name} className="w-12 h-12 rounded-full bg-gray-200 object-cover" />
+                                ) : (
+                                    <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-400">
+                                        <UserIcon size={20} />
+                                    </div>
+                                )}
                                 <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${isUnlimited ? 'bg-green-500' : 'bg-blue-500'}`} title={isUnlimited ? 'Unlimited' : 'Credit'}></div>
                             </div>
                             <div className="overflow-hidden flex-1">
@@ -330,7 +336,7 @@ export const StudentDirectoryModal: React.FC<Props> = ({ onClose }) => {
                              {formData.avatarUrl ? (
                                 <img src={formData.avatarUrl} alt="avatar" className="w-full h-full object-cover"/>
                              ) : (
-                                <UserIcon size={48} />
+                                <UserIcon size={48} className="text-gray-300"/>
                              )}
                              
                              <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">

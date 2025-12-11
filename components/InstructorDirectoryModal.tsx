@@ -2,7 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { Instructor } from '../types';
-import { X, Search, UserPlus, Trash2, UserCog, Save, Camera, Loader2, DollarSign, ChevronLeft } from 'lucide-react';
+import { X, Search, UserPlus, Trash2, UserCog, Save, Camera, Loader2, DollarSign, ChevronLeft, Phone } from 'lucide-react';
 
 interface Props {
   onClose: () => void;
@@ -23,12 +23,14 @@ export const InstructorDirectoryModal: React.FC<Props> = ({ onClose }) => {
   const [formData, setFormData] = useState<Partial<Instructor>>({
     name: '',
     bio: '',
+    phoneNumber: '',
     defaultRate: 800,
     imageUrl: ''
   });
 
   const filteredInstructors = instructors.filter(i => 
-    i.name.toLowerCase().includes(searchTerm.toLowerCase())
+    i.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    i.phoneNumber?.includes(searchTerm)
   );
 
   const selectedInst = instructors.find(i => i.id === selectedInstId);
@@ -41,6 +43,7 @@ export const InstructorDirectoryModal: React.FC<Props> = ({ onClose }) => {
     setFormData({
         name: inst.name,
         bio: inst.bio,
+        phoneNumber: inst.phoneNumber || '',
         defaultRate: inst.defaultRate || 800,
         imageUrl: inst.imageUrl
     });
@@ -58,6 +61,7 @@ export const InstructorDirectoryModal: React.FC<Props> = ({ onClose }) => {
     setFormData({
         name: '',
         bio: '',
+        phoneNumber: '',
         defaultRate: 800,
         imageUrl: ''
     });
@@ -79,7 +83,7 @@ export const InstructorDirectoryModal: React.FC<Props> = ({ onClose }) => {
     if (selectedInstId) {
         deleteInstructor(selectedInstId);
         handleBackToList();
-        setFormData({ name: '', bio: '', defaultRate: 800, imageUrl: '' });
+        setFormData({ name: '', bio: '', phoneNumber: '', defaultRate: 800, imageUrl: '' });
     }
   };
 
@@ -145,7 +149,7 @@ export const InstructorDirectoryModal: React.FC<Props> = ({ onClose }) => {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                     <input 
                         type="text" 
-                        placeholder="搜尋老師..." 
+                        placeholder="搜尋老師 (姓名/電話)..." 
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full pl-10 pr-4 py-3 text-base border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-zen-500 text-gray-900 bg-white"
@@ -174,10 +178,19 @@ export const InstructorDirectoryModal: React.FC<Props> = ({ onClose }) => {
                             : 'hover:bg-gray-100 bg-white border border-gray-100'
                         }`}
                     >
-                        <img src={inst.imageUrl} alt={inst.name} className="w-12 h-12 rounded-full bg-gray-200 object-cover" />
+                        {inst.imageUrl ? (
+                            <img src={inst.imageUrl} alt={inst.name} className="w-12 h-12 rounded-full bg-gray-200 object-cover" />
+                        ) : (
+                            <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-400">
+                                <UserCog size={20} />
+                            </div>
+                        )}
                         <div className="overflow-hidden flex-1">
                             <p className="font-bold text-lg text-gray-900 truncate">{inst.name}</p>
-                            <p className="text-sm text-gray-500 truncate">${inst.defaultRate}/hr</p>
+                            <div className="flex justify-between items-center text-sm text-gray-500">
+                                <span className="truncate">${inst.defaultRate}/hr</span>
+                                {inst.phoneNumber && <span className="text-xs font-mono">{inst.phoneNumber}</span>}
+                            </div>
                         </div>
                     </button>
                 ))}
@@ -233,6 +246,11 @@ export const InstructorDirectoryModal: React.FC<Props> = ({ onClose }) => {
                              <p className="text-gray-500 text-base">
                                 {isCreating ? '建立新師資' : `ID: ${selectedInstId}`}
                              </p>
+                             {formData.phoneNumber && (
+                                <p className="text-zen-600 text-base font-medium flex items-center gap-1 mt-1">
+                                    <Phone size={16}/> {formData.phoneNumber}
+                                </p>
+                             )}
                          </div>
                     </div>
 
@@ -248,6 +266,20 @@ export const InstructorDirectoryModal: React.FC<Props> = ({ onClose }) => {
                                     className="w-full p-4 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-zen-500 focus:outline-none font-medium text-gray-900 text-lg"
                                     placeholder="例如：Sarah Jenks"
                                 />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">電話</label>
+                                <div className="relative">
+                                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                                    <input 
+                                        type="tel" 
+                                        value={formData.phoneNumber || ''}
+                                        onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
+                                        className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-zen-500 focus:outline-none text-gray-900 text-lg"
+                                        placeholder="09xx..."
+                                    />
+                                </div>
                             </div>
 
                             <div>

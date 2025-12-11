@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { UserRole } from '../types';
-import { LogOut, LogIn, ChevronDown, CalendarDays, UserCircle, Camera, Loader2 } from 'lucide-react';
+import { LogOut, LogIn, ChevronDown, CalendarDays, UserCircle, Camera, Loader2, User as UserIcon, UserCog } from 'lucide-react';
 import { LoginModal } from './LoginModal';
 import { StudentProfileModal } from './StudentProfileModal';
 
@@ -122,11 +122,17 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                         </div>
                     </div>
                     <div className="relative">
-                        <img 
-                            src={currentUser.avatarUrl} 
-                            className={`w-9 h-9 rounded-full border-2 ${currentUser.role === UserRole.ADMIN ? 'border-zen-600' : 'border-white'} shadow-sm object-cover`} 
-                            alt="avatar" 
-                        />
+                        {currentUser.avatarUrl ? (
+                            <img 
+                                src={currentUser.avatarUrl} 
+                                className={`w-9 h-9 rounded-full border-2 ${currentUser.role === UserRole.ADMIN ? 'border-zen-600' : 'border-white'} shadow-sm object-cover`} 
+                                alt="avatar" 
+                            />
+                        ) : (
+                            <div className={`w-9 h-9 rounded-full border-2 ${currentUser.role === UserRole.ADMIN ? 'border-zen-600' : 'border-white'} shadow-sm bg-gray-200 text-gray-400 flex items-center justify-center`}>
+                                {isAdmin ? <UserCog size={16} /> : <UserIcon size={16} />}
+                            </div>
+                        )}
                         <div className="absolute bottom-0 right-0 bg-white rounded-full p-0.5 shadow-sm border border-gray-100">
                              <ChevronDown size={10} className="text-gray-500" />
                         </div>

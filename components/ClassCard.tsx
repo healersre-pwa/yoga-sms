@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ClassSession, Instructor, UserRole } from '../types';
-import { AlertCircle, X, Pencil, Clock, LogIn, CreditCard, MapPin, Loader2, Coins, Save, Users, User, Settings } from 'lucide-react';
+import { AlertCircle, X, Pencil, Clock, LogIn, CreditCard, MapPin, Loader2, Coins, Save, Users, User, Settings, UserCog } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 
 interface ClassCardProps {
@@ -376,7 +376,7 @@ export const ClassCard: React.FC<ClassCardProps> = ({
                         <img src={instructor.imageUrl} className="w-full h-full object-cover" />
                     ) : (
                         <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400">
-                            <User size={20} />
+                            <UserCog size={20} />
                         </div>
                     )}
                  </div>

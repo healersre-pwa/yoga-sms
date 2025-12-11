@@ -30,7 +30,7 @@ const GUEST_USER: User = {
     id: 'guest',
     name: '訪客',
     role: UserRole.GUEST,
-    avatarUrl: 'https://ui-avatars.com/api/?name=Guest&background=eee&color=999',
+    avatarUrl: '',
     username: 'guest'
 };
 
@@ -298,7 +298,7 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
                  id: adminId, 
                  name: '教室經理', 
                  role: UserRole.ADMIN, 
-                 avatarUrl: 'https://ui-avatars.com/api/?name=Admin&background=333&color=fff', 
+                 avatarUrl: '', 
                  username: 'admin', 
                  password: 'ooxx1234'
              };
@@ -822,7 +822,7 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
           id,
           name: data.name || 'New Instructor',
           bio: data.bio || '',
-          imageUrl: data.imageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name || 'I')}&background=random`,
+          imageUrl: data.imageUrl || '',
           defaultRate: data.defaultRate || 800,
           ...data
       };
@@ -851,7 +851,7 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
       const newS = { 
           id, 
           role: UserRole.STUDENT, 
-          avatarUrl: d.avatarUrl || `https://ui-avatars.com/api/?name=${d.name || 'User'}&background=random`, 
+          avatarUrl: d.avatarUrl || '', 
           password: '123456', 
           hasPaid: false, 
           mustChangePassword: true, 

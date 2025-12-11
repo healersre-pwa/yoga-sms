@@ -1,7 +1,7 @@
 
 import React, { useState, useRef } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { X, User as UserIcon, CreditCard, Calendar, Trash2, MapPin, Camera, Edit2, Save, Loader2, Calculator, ChevronRight, Coins, Infinity, Phone, History, Clock } from 'lucide-react';
+import { X, User as UserIcon, CreditCard, Calendar, Trash2, MapPin, Camera, Edit2, Save, Loader2, Calculator, ChevronRight, Coins, Infinity, Phone, History, Clock, UserCog } from 'lucide-react';
 import { UserRole } from '../types';
 import { SalaryCalculatorModal } from './SalaryCalculatorModal';
 
@@ -142,19 +142,23 @@ export const StudentProfileModal: React.FC<Props> = ({ onClose }) => {
             <div className="flex items-center gap-4">
                 {/* Avatar with Upload */}
                 <div className="relative group shrink-0">
-                    <div className="w-20 h-20 rounded-full border-4 border-white/30 shadow-lg overflow-hidden bg-white relative">
+                    <div className="w-20 h-20 rounded-full border-4 border-white/30 shadow-lg overflow-hidden bg-white relative flex items-center justify-center">
                         {isUploading ? (
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-20">
                                 <Loader2 className="animate-spin text-white" />
                             </div>
                         ) : (
-                            <img src={currentUser.avatarUrl} alt={currentUser.name} className="w-full h-full object-cover"/>
+                            currentUser.avatarUrl ? (
+                                <img src={currentUser.avatarUrl} alt={currentUser.name} className="w-full h-full object-cover"/>
+                            ) : (
+                                isAdmin ? <UserCog size={32} className="text-gray-300" /> : <UserIcon size={32} className="text-gray-300" />
+                            )
                         )}
                     </div>
                     
                     <button 
                         onClick={() => fileInputRef.current?.click()}
-                        className="absolute bottom-0 right-0 bg-white text-zen-600 p-1.5 rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                        className="absolute bottom-0 right-0 bg-white text-zen-600 p-1.5 rounded-full shadow-md hover:bg-gray-100 transition-colors z-20"
                         title="更換照片"
                     >
                         <Camera size={14} />
@@ -232,7 +236,7 @@ export const StudentProfileModal: React.FC<Props> = ({ onClose }) => {
                 // --- ADMIN VIEW: Salary Calculator & Quick Links ---
                 <div className="p-6">
                     <h3 className="text-gray-800 font-bold mb-4 flex items-center gap-2">
-                        <UserIcon className="text-zen-600" size={20} />
+                        <UserCog className="text-zen-600" size={20} />
                         管理員功能
                     </h3>
                     

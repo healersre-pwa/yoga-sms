@@ -29,6 +29,7 @@ export interface Instructor {
   name: string;
   bio: string;
   imageUrl: string;
+  phoneNumber?: string; // Added phone number
   defaultRate?: number; 
 }
 
