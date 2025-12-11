@@ -182,7 +182,12 @@ export const Dashboard: React.FC = () => {
     <div className="space-y-6 pb-20">
       <header className="mb-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-          <div className="min-w-0">
+          
+          {/* 
+            HEADER CARD
+            Updated: bg-white/40 for much more transparency
+          */}
+          <div className="min-w-0 bg-white/40 backdrop-blur-md p-5 rounded-2xl shadow-sm border border-white/40">
               <h1 className="text-3xl md:text-4xl font-bold text-gray-900 flex items-center gap-3">
                   <span className="whitespace-nowrap">
                     {currentUser.role === UserRole.ADMIN ? '教室管理看板' : '課程預約'}
@@ -193,8 +198,8 @@ export const Dashboard: React.FC = () => {
                       </span>
                   )}
               </h1>
-              <p className="text-gray-500 mt-2 flex items-center gap-2 text-base font-medium">
-                  <Calendar size={18} className="text-zen-500 shrink-0"/>
+              <p className="text-gray-700 mt-2 flex items-center gap-2 text-base font-medium">
+                  <Calendar size={18} className="text-zen-700 shrink-0"/>
                   <span>
                     {currentUser.role === UserRole.ADMIN 
                         ? '管理每週固定課程、安排師資與學生資料。' 
@@ -205,33 +210,41 @@ export const Dashboard: React.FC = () => {
           
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto overflow-x-auto pb-1 sm:pb-0">
                
-               <div className="flex items-center bg-white p-1 rounded-xl border border-gray-200 shadow-sm flex-1 sm:flex-none justify-center shrink-0">
-                  <button onClick={() => changeWeek(-1)} className="p-3 hover:bg-gray-100 rounded-lg text-gray-500">
+               {/* 
+                   DATE PICKER TOOLBAR 
+                   Updated: bg-white/40 for glass effect
+               */}
+               <div className="flex items-center bg-white/40 backdrop-blur-md p-1 rounded-xl border border-white/40 shadow-sm flex-1 sm:flex-none justify-center shrink-0">
+                  <button onClick={() => changeWeek(-1)} className="p-3 hover:bg-white/50 rounded-lg text-gray-700">
                       <ChevronLeft size={20} />
                   </button>
-                  <div className="px-3 font-bold text-base text-gray-700 min-w-[160px] md:min-w-[180px] text-center font-mono tracking-tight whitespace-nowrap">
+                  <div className="px-3 font-bold text-base text-gray-800 min-w-[160px] md:min-w-[180px] text-center font-mono tracking-tight whitespace-nowrap">
                       {getWeekRangeLabel()}
                   </div>
-                  <button onClick={() => changeWeek(1)} className="p-3 hover:bg-gray-100 rounded-lg text-gray-500">
+                  <button onClick={() => changeWeek(1)} className="p-3 hover:bg-white/50 rounded-lg text-gray-700">
                       <ChevronRight size={20} />
                   </button>
-                  <div className="w-px h-6 bg-gray-200 mx-1"></div>
-                  <button onClick={resetToThisWeek} className="p-3 hover:bg-gray-100 rounded-lg text-gray-500" title="回到本週">
+                  <div className="w-px h-6 bg-gray-400/30 mx-1"></div>
+                  <button onClick={resetToThisWeek} className="p-3 hover:bg-white/50 rounded-lg text-gray-700" title="回到本週">
                       <RotateCcw size={18} />
                   </button>
                </div>
 
-               <div className="bg-white p-1 rounded-xl border border-gray-200 shadow-sm flex items-center justify-center sm:justify-start shrink-0">
+               {/* 
+                   VIEW MODE TOGGLE
+                   Updated: bg-white/40 for glass effect
+               */}
+               <div className="bg-white/40 backdrop-blur-md p-1 rounded-xl border border-white/40 shadow-sm flex items-center justify-center sm:justify-start shrink-0">
                   <button 
                       onClick={() => setViewMode('normal')}
-                      className={`p-3 rounded-lg transition-all ${viewMode === 'normal' ? 'bg-zen-100 text-zen-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                      className={`p-3 rounded-lg transition-all ${viewMode === 'normal' ? 'bg-zen-100/80 text-zen-800 shadow-sm' : 'text-gray-600 hover:text-gray-800 hover:bg-white/30'}`}
                       title="標準檢視"
                   >
                       <LayoutGrid size={20} />
                   </button>
                   <button 
                       onClick={() => setViewMode('compact')}
-                      className={`p-3 rounded-lg transition-all ${viewMode === 'compact' ? 'bg-zen-100 text-zen-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                      className={`p-3 rounded-lg transition-all ${viewMode === 'compact' ? 'bg-zen-100/80 text-zen-800 shadow-sm' : 'text-gray-600 hover:text-gray-800 hover:bg-white/30'}`}
                       title="精簡檢視"
                   >
                       <List size={20} />
@@ -250,45 +263,45 @@ export const Dashboard: React.FC = () => {
                       
                       <button 
                           onClick={() => setShowInstructorDirectory(true)}
-                          className="flex items-center justify-center gap-2 bg-white border border-gray-200 shadow-sm text-gray-700 px-5 py-3 rounded-xl font-bold hover:bg-gray-50 hover:border-gray-300 transition-all text-base whitespace-nowrap"
+                          className="flex items-center justify-center gap-2 bg-white/60 backdrop-blur-md border border-white/50 shadow-sm text-gray-700 px-5 py-3 rounded-xl font-bold hover:bg-white hover:border-white transition-all text-base whitespace-nowrap"
                           title="師資管理"
                       >
-                          <UserCog size={20} className="text-zen-600" />
+                          <UserCog size={20} className="text-zen-700" />
                       </button>
 
                       <button 
                           onClick={() => setShowStudentDirectory(true)}
-                          className="flex items-center justify-center gap-2 bg-white border border-gray-200 shadow-sm text-gray-700 px-5 py-3 rounded-xl font-bold hover:bg-gray-50 hover:border-gray-300 transition-all text-base whitespace-nowrap"
+                          className="flex items-center justify-center gap-2 bg-white/60 backdrop-blur-md border border-white/50 shadow-sm text-gray-700 px-5 py-3 rounded-xl font-bold hover:bg-white hover:border-white transition-all text-base whitespace-nowrap"
                           title="學生名錄"
                       >
-                          <Users size={20} className="text-zen-600" />
+                          <Users size={20} className="text-zen-700" />
                       </button>
 
                       <button 
                           onClick={() => setShowExportModal(true)}
-                          className="flex items-center justify-center gap-2 bg-white border border-gray-200 shadow-sm text-gray-700 px-5 py-3 rounded-xl font-bold hover:bg-gray-50 hover:border-gray-300 transition-all text-base whitespace-nowrap"
+                          className="flex items-center justify-center gap-2 bg-white/60 backdrop-blur-md border border-white/50 shadow-sm text-gray-700 px-5 py-3 rounded-xl font-bold hover:bg-white hover:border-white transition-all text-base whitespace-nowrap"
                           title="匯出資料與維護"
                       >
-                          <Download size={20} className="text-zen-600" />
+                          <Download size={20} className="text-zen-700" />
                       </button>
 
                       <button 
                           onClick={() => bgInputRef.current?.click()}
                           disabled={isUploadingBg}
-                          className="flex items-center justify-center gap-2 bg-white border border-gray-200 shadow-sm text-gray-700 px-5 py-3 rounded-xl font-bold hover:bg-gray-50 hover:border-gray-300 transition-all text-base whitespace-nowrap"
+                          className="flex items-center justify-center gap-2 bg-white/60 backdrop-blur-md border border-white/50 shadow-sm text-gray-700 px-5 py-3 rounded-xl font-bold hover:bg-white hover:border-white transition-all text-base whitespace-nowrap"
                           title="更換背景"
                       >
-                          {isUploadingBg ? <Loader2 size={20} className="animate-spin text-zen-600" /> : <ImageIcon size={20} className="text-zen-600" />}
+                          {isUploadingBg ? <Loader2 size={20} className="animate-spin text-zen-700" /> : <ImageIcon size={20} className="text-zen-700" />}
                           <input ref={bgInputRef} type="file" className="hidden" accept="image/*" onChange={handleBgUpload} />
                       </button>
 
                       <button 
                           onClick={handleLoadHistory}
                           disabled={isLoadingHistory}
-                          className="flex items-center justify-center gap-2 bg-white border border-gray-200 shadow-sm text-gray-700 px-5 py-3 rounded-xl font-bold hover:bg-gray-50 hover:border-gray-300 transition-all text-base whitespace-nowrap"
+                          className="flex items-center justify-center gap-2 bg-white/60 backdrop-blur-md border border-white/50 shadow-sm text-gray-700 px-5 py-3 rounded-xl font-bold hover:bg-white hover:border-white transition-all text-base whitespace-nowrap"
                           title="載入歷史資料"
                       >
-                          {isLoadingHistory ? <Loader2 size={20} className="animate-spin text-zen-600" /> : <History size={20} className="text-zen-600" />}
+                          {isLoadingHistory ? <Loader2 size={20} className="animate-spin text-zen-700" /> : <History size={20} className="text-zen-700" />}
                       </button>
                   </div>
               )}
@@ -296,7 +309,11 @@ export const Dashboard: React.FC = () => {
         </div>
       </header>
 
-      <div className="grid grid-cols-7 gap-1 px-1 mb-2 sticky top-[136px] z-20 bg-[#f4f7f6]/95 backdrop-blur py-2 md:flex md:justify-center md:gap-3 md:bg-transparent md:static">
+      {/* 
+          DAY FILTER STICKY BAR
+          Updated: bg-white/30 backdrop-blur-md to float nicely over background
+      */}
+      <div className="grid grid-cols-7 gap-1 px-1 mb-2 sticky top-[136px] z-20 bg-white/30 backdrop-blur-md py-2 md:flex md:justify-center md:gap-3 md:bg-transparent md:static rounded-xl mx-2 md:mx-0 shadow-sm md:shadow-none border border-white/20 md:border-none">
           {days.map(day => (
               <button 
                 key={day.id} 
@@ -304,7 +321,7 @@ export const Dashboard: React.FC = () => {
                 className={`flex-shrink-0 px-1 py-2 md:px-5 md:py-3 border rounded-full text-xs md:text-base font-bold shadow-sm active:scale-95 transition-all text-center
                     ${selectedDay === day.id 
                         ? 'bg-zen-600 text-white border-zen-600 ring-2 ring-zen-200' 
-                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 active:bg-zen-50'
+                        : 'bg-white/80 text-gray-700 border-white/50 hover:bg-white active:bg-zen-50'
                     }`}
               >
                   {day.name}
@@ -335,8 +352,8 @@ export const Dashboard: React.FC = () => {
                 .sort((a, b) => a.startTimeStr.localeCompare(b.startTimeStr));
 
             return (
-                <div id={`day-column-${day.id}`} key={day.id} className={`flex flex-col min-h-[100px] rounded-2xl border shadow-sm relative transition-colors ${isToday ? 'bg-zen-50/60 border-zen-200' : 'bg-gray-50/50 border-gray-100'}`}>
-                    <div className={`p-3 border-b flex flex-col items-center justify-center sticky top-16 z-10 rounded-t-2xl shadow-sm h-16 ${isToday ? 'bg-zen-100 border-zen-200' : 'bg-white border-gray-100'}`}>
+                <div id={`day-column-${day.id}`} key={day.id} className={`flex flex-col min-h-[100px] rounded-2xl border shadow-sm relative transition-colors ${isToday ? 'bg-zen-50/80 border-zen-200 backdrop-blur-sm' : 'bg-gray-50/70 border-gray-100 backdrop-blur-sm'}`}>
+                    <div className={`p-3 border-b flex flex-col items-center justify-center sticky top-16 z-10 rounded-t-2xl shadow-sm h-16 ${isToday ? 'bg-zen-100/90 border-zen-200' : 'bg-white/90 border-gray-100'}`}>
                         <span className={`font-black text-lg ${isToday ? 'text-zen-800' : 'text-gray-800'}`}>{day.name}</span>
                         <span className={`text-sm font-mono ${isToday ? 'text-zen-700 font-bold' : 'text-gray-500'}`}>
                             {targetDate.toLocaleDateString('zh-TW', {month:'numeric', day:'numeric'})}
@@ -382,7 +399,7 @@ export const Dashboard: React.FC = () => {
                                 );
                             })
                         ) : (
-                            <div className="flex flex-col items-center justify-center py-8 text-gray-300 text-sm italic space-y-1">
+                            <div className="flex flex-col items-center justify-center py-8 text-gray-500 text-sm italic space-y-1">
                                 <span>{isStudent ? '無' : '無課程'}</span>
                             </div>
                         )}

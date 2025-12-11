@@ -86,13 +86,18 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
   return (
     <div className="min-h-screen flex flex-col bg-transparent">
-      <nav className="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-white/50 shadow-sm">
+      {/* 
+          UPDATED NAVBAR: 
+          bg-white/50 for more transparency
+          border-white/30 to blend better
+      */}
+      <nav className="bg-white/50 backdrop-blur-md sticky top-0 z-40 border-b border-white/30 shadow-sm transition-all duration-300">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             
             <div className="flex items-center gap-2">
               <div 
-                className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xl shadow-md overflow-hidden relative group transition-all ${isAdmin ? 'cursor-pointer hover:ring-2 hover:ring-zen-300' : ''} ${appLogo ? 'bg-white' : 'bg-zen-600 text-white shadow-zen-200'}`}
+                className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xl shadow-md overflow-hidden relative group transition-all ${isAdmin ? 'cursor-pointer hover:ring-2 hover:ring-zen-300' : ''} ${appLogo ? 'bg-white/80' : 'bg-zen-600 text-white shadow-zen-200'}`}
                 onClick={() => isAdmin && logoInputRef.current?.click()}
                 title={isAdmin ? "點擊更換 Logo" : "ZenFlow"}
               >
@@ -115,7 +120,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                  )}
                  <input type="file" ref={logoInputRef} className="hidden" accept="image/*" onChange={handleLogoUpload} />
               </div>
-              <span className="text-xl font-bold tracking-tight text-gray-800">ZenFlow</span>
+              <span className="text-xl font-bold tracking-tight text-gray-800 drop-shadow-sm">ZenFlow</span>
             </div>
             
             <div className="flex items-center gap-4">
@@ -123,11 +128,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                <div className="relative" ref={menuRef}>
                   <button 
                     onClick={() => setIsMenuOpen(!isMenuOpen)}
-                    className="flex items-center gap-2 pl-2 pr-1 py-1 rounded-full hover:bg-gray-100 transition-colors focus:outline-none"
+                    className="flex items-center gap-2 pl-2 pr-1 py-1 rounded-full hover:bg-white/40 transition-colors focus:outline-none"
                   >
                     <div className="text-right hidden sm:block">
                         <div className="text-sm font-bold text-gray-800 leading-tight">{currentUser.name}</div>
-                        <div className="text-[10px] text-gray-500 font-semibold uppercase tracking-wider">
+                        <div className="text-[10px] text-gray-600 font-semibold uppercase tracking-wider">
                             {currentUser.role === UserRole.GUEST ? '訪客' : (currentUser.role === UserRole.ADMIN ? '管理員' : '學生')}
                         </div>
                     </div>
@@ -135,11 +140,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                         {currentUser.avatarUrl ? (
                             <img 
                                 src={currentUser.avatarUrl} 
-                                className={`w-9 h-9 rounded-full border-2 ${currentUser.role === UserRole.ADMIN ? 'border-zen-600' : 'border-white'} shadow-sm object-cover`} 
+                                className={`w-9 h-9 rounded-full border-2 ${currentUser.role === UserRole.ADMIN ? 'border-zen-600' : 'border-white/80'} shadow-sm object-cover`} 
                                 alt="avatar" 
                             />
                         ) : (
-                            <div className={`w-9 h-9 rounded-full border-2 ${currentUser.role === UserRole.ADMIN ? 'border-zen-600' : 'border-white'} shadow-sm bg-gray-200 text-gray-400 flex items-center justify-center`}>
+                            <div className={`w-9 h-9 rounded-full border-2 ${currentUser.role === UserRole.ADMIN ? 'border-zen-600' : 'border-white/80'} shadow-sm bg-white/50 text-gray-500 flex items-center justify-center`}>
                                 {isAdmin ? <UserCog size={16} /> : <UserIcon size={16} />}
                             </div>
                         )}
@@ -150,8 +155,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                   </button>
 
                   {isMenuOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-1 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 z-50">
-                        <div className="px-4 py-3 border-b border-gray-50 sm:hidden">
+                    <div className="absolute right-0 top-full mt-2 w-48 bg-white/90 backdrop-blur-xl rounded-xl shadow-xl border border-white/50 py-1 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 z-50">
+                        <div className="px-4 py-3 border-b border-gray-100 sm:hidden">
                             <p className="text-sm font-bold text-gray-900">{currentUser.name}</p>
                             <p className="text-xs text-gray-500">{currentUser.role}</p>
                         </div>
@@ -159,7 +164,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                         {currentUser.role === UserRole.GUEST ? (
                             <button 
                                 onClick={handleLoginClick}
-                                className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-zen-600 flex items-center gap-2 font-medium"
+                                className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-zen-50 hover:text-zen-600 flex items-center gap-2 font-medium"
                             >
                                 <LogIn size={16} />
                                 登入帳號
@@ -172,7 +177,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                                 
                                 <button 
                                     onClick={handleProfileClick}
-                                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-zen-600 flex items-center gap-2 font-medium border-b border-gray-50"
+                                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-zen-50 hover:text-zen-600 flex items-center gap-2 font-medium border-b border-gray-100"
                                 >
                                     {currentUser.role === UserRole.STUDENT ? <CalendarDays size={16} /> : <UserCircle size={16} />}
                                     管理 / 查看

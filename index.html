@@ -48,9 +48,19 @@
       background-image: url('https://images.unsplash.com/photo-1545205597-3d9d02c29597?q=80&w=2070&auto=format&fit=crop');
       background-size: cover;
       background-position: center;
-      background-attachment: fixed;
       background-repeat: no-repeat;
       min-height: 100vh;
+      
+      /* 電腦版預設 fixed：背景不動，內容滑動 */
+      background-attachment: fixed;
+    }
+
+    /* 手機版優化：改為 scroll 避免 iOS 背景放大問題，並調整定位 */
+    @media (max-width: 768px) {
+      body {
+        background-attachment: scroll;
+        background-position: center top; /* 讓圖片從上方開始顯示，避免人臉被截掉 */
+      }
     }
   </style>
 
