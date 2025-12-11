@@ -26,16 +26,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Sync Body Background Image
-  useEffect(() => {
-      if (appBackgroundImage) {
-          document.body.style.backgroundImage = `url('${appBackgroundImage}')`;
-      } else {
-          // If no custom background, clear the inline style so it falls back to index.html's CSS
-          document.body.style.backgroundImage = '';
-      }
-  }, [appBackgroundImage]);
-
   const handleLogout = () => {
     logout();
     setIsMenuOpen(false);
@@ -84,125 +74,147 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
   const isAdmin = currentUser.role === UserRole.ADMIN;
 
+  // Default background if none set
+  const defaultBg = 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?q=80&w=2070&auto=format&fit=crop';
+  const currentBg = appBackgroundImage || defaultBg;
+
   return (
-    <div className="min-h-screen flex flex-col bg-transparent">
+    <div className="min-h-screen relative bg-gray-50">
       {/* 
-          UPDATED NAVBAR: 
-          bg-white/50 for more transparency
-          border-white/30 to blend better
+          FIXED BACKGROUND LAYER 
+          z-index: 0 ensures it sits on top of the base body color but below content.
+          bg-cover + bg-top: Ensures the image covers the screen but anchors to the top (heads visible).
       */}
-      <nav className="bg-white/50 backdrop-blur-md sticky top-0 z-40 border-b border-white/30 shadow-sm transition-all duration-300">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            
-            <div className="flex items-center gap-2">
-              <div 
-                className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xl shadow-md overflow-hidden relative group transition-all ${isAdmin ? 'cursor-pointer hover:ring-2 hover:ring-zen-300' : ''} ${appLogo ? 'bg-white/80' : 'bg-zen-600 text-white shadow-zen-200'}`}
-                onClick={() => isAdmin && logoInputRef.current?.click()}
-                title={isAdmin ? "點擊更換 Logo" : "ZenFlow"}
-              >
-                 {isUploadingLogo && (
-                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
-                         <Loader2 size={16} className="text-white animate-spin"/>
-                     </div>
-                 )}
+      <div 
+        className="fixed inset-0 z-0 bg-no-repeat bg-cover bg-top transition-all duration-500 ease-in-out"
+        style={{ 
+            backgroundImage: `url('${currentBg}')`,
+        }} 
+      />
 
-                 {appLogo ? (
-                     <img src={appLogo} alt="Logo" className="w-full h-full object-contain p-1" />
-                 ) : (
-                     "Z"
-                 )}
-
-                 {isAdmin && (
-                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                         <Camera size={16} className="text-white"/>
-                     </div>
-                 )}
-                 <input type="file" ref={logoInputRef} className="hidden" accept="image/*" onChange={handleLogoUpload} />
-              </div>
-              <span className="text-xl font-bold tracking-tight text-gray-800 drop-shadow-sm">ZenFlow</span>
-            </div>
-            
-            <div className="flex items-center gap-4">
-               
-               <div className="relative" ref={menuRef}>
-                  <button 
-                    onClick={() => setIsMenuOpen(!isMenuOpen)}
-                    className="flex items-center gap-2 pl-2 pr-1 py-1 rounded-full hover:bg-white/40 transition-colors focus:outline-none"
-                  >
-                    <div className="text-right hidden sm:block">
-                        <div className="text-sm font-bold text-gray-800 leading-tight">{currentUser.name}</div>
-                        <div className="text-[10px] text-gray-600 font-semibold uppercase tracking-wider">
-                            {currentUser.role === UserRole.GUEST ? '訪客' : (currentUser.role === UserRole.ADMIN ? '管理員' : '學生')}
+      {/* 
+          CONTENT WRAPPER
+          z-index: 10 ensures content sits ON TOP of the background div.
+          position: relative creates a new stacking context.
+      */}
+      <div className="relative z-10 flex flex-col min-h-screen">
+        
+        {/* NAVBAR */}
+        <nav className="bg-white/50 backdrop-blur-md sticky top-0 z-40 border-b border-white/30 shadow-sm transition-all duration-300">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between h-16">
+                
+                <div className="flex items-center gap-2">
+                <div 
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xl shadow-md overflow-hidden relative group transition-all ${isAdmin ? 'cursor-pointer hover:ring-2 hover:ring-zen-300' : ''} ${appLogo ? 'bg-white/80' : 'bg-zen-600 text-white shadow-zen-200'}`}
+                    onClick={() => isAdmin && logoInputRef.current?.click()}
+                    title={isAdmin ? "點擊更換 Logo" : "ZenFlow"}
+                >
+                    {isUploadingLogo && (
+                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
+                            <Loader2 size={16} className="text-white animate-spin"/>
                         </div>
-                    </div>
-                    <div className="relative">
-                        {currentUser.avatarUrl ? (
-                            <img 
-                                src={currentUser.avatarUrl} 
-                                className={`w-9 h-9 rounded-full border-2 ${currentUser.role === UserRole.ADMIN ? 'border-zen-600' : 'border-white/80'} shadow-sm object-cover`} 
-                                alt="avatar" 
-                            />
-                        ) : (
-                            <div className={`w-9 h-9 rounded-full border-2 ${currentUser.role === UserRole.ADMIN ? 'border-zen-600' : 'border-white/80'} shadow-sm bg-white/50 text-gray-500 flex items-center justify-center`}>
-                                {isAdmin ? <UserCog size={16} /> : <UserIcon size={16} />}
+                    )}
+
+                    {appLogo ? (
+                        <img src={appLogo} alt="Logo" className="w-full h-full object-contain p-1" />
+                    ) : (
+                        "Z"
+                    )}
+
+                    {isAdmin && (
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                            <Camera size={16} className="text-white"/>
+                        </div>
+                    )}
+                    <input type="file" ref={logoInputRef} className="hidden" accept="image/*" onChange={handleLogoUpload} />
+                </div>
+                <span className="text-xl font-bold tracking-tight text-gray-800 drop-shadow-sm">ZenFlow</span>
+                </div>
+                
+                <div className="flex items-center gap-4">
+                
+                <div className="relative" ref={menuRef}>
+                    <button 
+                        onClick={() => setIsMenuOpen(!isMenuOpen)}
+                        className="flex items-center gap-2 pl-2 pr-1 py-1 rounded-full hover:bg-white/40 transition-colors focus:outline-none"
+                    >
+                        <div className="text-right hidden sm:block">
+                            <div className="text-sm font-bold text-gray-800 leading-tight">{currentUser.name}</div>
+                            <div className="text-[10px] text-gray-600 font-semibold uppercase tracking-wider">
+                                {currentUser.role === UserRole.GUEST ? '訪客' : (currentUser.role === UserRole.ADMIN ? '管理員' : '學生')}
                             </div>
-                        )}
-                        <div className="absolute bottom-0 right-0 bg-white rounded-full p-0.5 shadow-sm border border-gray-100">
-                             <ChevronDown size={10} className="text-gray-500" />
                         </div>
-                    </div>
-                  </button>
-
-                  {isMenuOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-48 bg-white/90 backdrop-blur-xl rounded-xl shadow-xl border border-white/50 py-1 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 z-50">
-                        <div className="px-4 py-3 border-b border-gray-100 sm:hidden">
-                            <p className="text-sm font-bold text-gray-900">{currentUser.name}</p>
-                            <p className="text-xs text-gray-500">{currentUser.role}</p>
-                        </div>
-                        
-                        {currentUser.role === UserRole.GUEST ? (
-                            <button 
-                                onClick={handleLoginClick}
-                                className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-zen-50 hover:text-zen-600 flex items-center gap-2 font-medium"
-                            >
-                                <LogIn size={16} />
-                                登入帳號
-                            </button>
-                        ) : (
-                            <>
-                                <div className="px-4 py-2 text-xs text-gray-400 font-semibold uppercase tracking-wider">
-                                    帳號管理
+                        <div className="relative">
+                            {currentUser.avatarUrl ? (
+                                <img 
+                                    src={currentUser.avatarUrl} 
+                                    className={`w-9 h-9 rounded-full border-2 ${currentUser.role === UserRole.ADMIN ? 'border-zen-600' : 'border-white/80'} shadow-sm object-cover`} 
+                                    alt="avatar" 
+                                />
+                            ) : (
+                                <div className={`w-9 h-9 rounded-full border-2 ${currentUser.role === UserRole.ADMIN ? 'border-zen-600' : 'border-white/80'} shadow-sm bg-white/50 text-gray-500 flex items-center justify-center`}>
+                                    {isAdmin ? <UserCog size={16} /> : <UserIcon size={16} />}
                                 </div>
-                                
-                                <button 
-                                    onClick={handleProfileClick}
-                                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-zen-50 hover:text-zen-600 flex items-center gap-2 font-medium border-b border-gray-100"
-                                >
-                                    {currentUser.role === UserRole.STUDENT ? <CalendarDays size={16} /> : <UserCircle size={16} />}
-                                    管理 / 查看
-                                </button>
+                            )}
+                            <div className="absolute bottom-0 right-0 bg-white rounded-full p-0.5 shadow-sm border border-gray-100">
+                                <ChevronDown size={10} className="text-gray-500" />
+                            </div>
+                        </div>
+                    </button>
 
+                    {isMenuOpen && (
+                        <div className="absolute right-0 top-full mt-2 w-48 bg-white/90 backdrop-blur-xl rounded-xl shadow-xl border border-white/50 py-1 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 z-50">
+                            <div className="px-4 py-3 border-b border-gray-100 sm:hidden">
+                                <p className="text-sm font-bold text-gray-900">{currentUser.name}</p>
+                                <p className="text-xs text-gray-500">{currentUser.role}</p>
+                            </div>
+                            
+                            {currentUser.role === UserRole.GUEST ? (
                                 <button 
-                                    onClick={handleLogout}
-                                    className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 font-medium"
+                                    onClick={handleLoginClick}
+                                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-zen-50 hover:text-zen-600 flex items-center gap-2 font-medium"
                                 >
-                                    <LogOut size={16} />
-                                    登出
+                                    <LogIn size={16} />
+                                    登入帳號
                                 </button>
-                            </>
-                        )}
-                    </div>
-                  )}
-               </div>
+                            ) : (
+                                <>
+                                    <div className="px-4 py-2 text-xs text-gray-400 font-semibold uppercase tracking-wider">
+                                        帳號管理
+                                    </div>
+                                    
+                                    <button 
+                                        onClick={handleProfileClick}
+                                        className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-zen-50 hover:text-zen-600 flex items-center gap-2 font-medium border-b border-gray-100"
+                                    >
+                                        {currentUser.role === UserRole.STUDENT ? <CalendarDays size={16} /> : <UserCircle size={16} />}
+                                        管理 / 查看
+                                    </button>
+
+                                    <button 
+                                        onClick={handleLogout}
+                                        className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 font-medium"
+                                    >
+                                        <LogOut size={16} />
+                                        登出
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    )}
+                </div>
+                </div>
             </div>
-          </div>
-        </div>
-      </nav>
+            </div>
+        </nav>
 
-      <main className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
-        {children}
-      </main>
+        {/* MAIN CONTENT */}
+        {/* Reduced py-6 to py-4 to make top tighter */}
+        <main className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4">
+            {children}
+        </main>
+      </div>
 
       {/* Modals placed at the bottom for better z-index stacking */}
       <LoginModal isOpen={isLoginModalOpen} onClose={() => setLoginModalOpen(false)} />

@@ -179,16 +179,16 @@ export const Dashboard: React.FC = () => {
   const isStudent = currentUser.role === UserRole.STUDENT;
 
   return (
-    <div className="space-y-6 pb-20">
-      <header className="mb-8">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+    <div className="space-y-4 pb-20">
+      <header className="mb-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           
           {/* 
-            HEADER CARD
-            Updated: bg-white/40 for much more transparency
+            HEADER CARD - MADE COMPACT
+            Reduced padding (p-4) and spacing to make it less "Top Heavy"
           */}
-          <div className="min-w-0 bg-white/40 backdrop-blur-md p-5 rounded-2xl shadow-sm border border-white/40">
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 flex items-center gap-3">
+          <div className="min-w-0 bg-white/40 backdrop-blur-md p-4 rounded-xl shadow-sm border border-white/40">
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-2">
                   <span className="whitespace-nowrap">
                     {currentUser.role === UserRole.ADMIN ? '教室管理看板' : '課程預約'}
                   </span>
@@ -198,27 +198,26 @@ export const Dashboard: React.FC = () => {
                       </span>
                   )}
               </h1>
-              <p className="text-gray-700 mt-2 flex items-center gap-2 text-base font-medium">
-                  <Calendar size={18} className="text-zen-700 shrink-0"/>
+              <p className="text-gray-700 mt-1 flex items-center gap-2 text-sm font-medium">
+                  <Calendar size={16} className="text-zen-700 shrink-0"/>
                   <span>
                     {currentUser.role === UserRole.ADMIN 
-                        ? '管理每週固定課程、安排師資與學生資料。' 
+                        ? '管理每週固定課程。' 
                         : ' (兩日前 09:00 開放預約)。'}
                   </span>
               </p>
           </div>
           
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto overflow-x-auto pb-1 sm:pb-0">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 sm:pb-0">
                
                {/* 
                    DATE PICKER TOOLBAR 
-                   Updated: bg-white/40 for glass effect
                */}
                <div className="flex items-center bg-white/40 backdrop-blur-md p-1 rounded-xl border border-white/40 shadow-sm flex-1 sm:flex-none justify-center shrink-0">
                   <button onClick={() => changeWeek(-1)} className="p-3 hover:bg-white/50 rounded-lg text-gray-700">
                       <ChevronLeft size={20} />
                   </button>
-                  <div className="px-3 font-bold text-base text-gray-800 min-w-[160px] md:min-w-[180px] text-center font-mono tracking-tight whitespace-nowrap">
+                  <div className="px-2 font-bold text-base text-gray-800 min-w-[150px] md:min-w-[180px] text-center font-mono tracking-tight whitespace-nowrap">
                       {getWeekRangeLabel()}
                   </div>
                   <button onClick={() => changeWeek(1)} className="p-3 hover:bg-white/50 rounded-lg text-gray-700">
@@ -232,7 +231,6 @@ export const Dashboard: React.FC = () => {
 
                {/* 
                    VIEW MODE TOGGLE
-                   Updated: bg-white/40 for glass effect
                */}
                <div className="bg-white/40 backdrop-blur-md p-1 rounded-xl border border-white/40 shadow-sm flex items-center justify-center sm:justify-start shrink-0">
                   <button 
@@ -255,15 +253,15 @@ export const Dashboard: React.FC = () => {
                   <div className="flex gap-2 shrink-0">
                       <button 
                           onClick={() => handleCreateClass()} 
-                          className="flex items-center justify-center gap-2 bg-zen-600 text-white px-5 py-3 rounded-xl font-bold hover:bg-zen-700 shadow-lg shadow-zen-200 transition-all text-base whitespace-nowrap"
+                          className="flex items-center justify-center gap-2 bg-zen-600 text-white px-4 py-3 rounded-xl font-bold hover:bg-zen-700 shadow-lg shadow-zen-200 transition-all text-sm whitespace-nowrap"
                       >
                           <PlusCircle size={20} />
-                          <span className="hidden lg:inline">新增課程</span>
+                          <span className="hidden lg:inline">新增</span>
                       </button>
                       
                       <button 
                           onClick={() => setShowInstructorDirectory(true)}
-                          className="flex items-center justify-center gap-2 bg-white/60 backdrop-blur-md border border-white/50 shadow-sm text-gray-700 px-5 py-3 rounded-xl font-bold hover:bg-white hover:border-white transition-all text-base whitespace-nowrap"
+                          className="flex items-center justify-center gap-2 bg-white/60 backdrop-blur-md border border-white/50 shadow-sm text-gray-700 px-4 py-3 rounded-xl font-bold hover:bg-white hover:border-white transition-all text-sm whitespace-nowrap"
                           title="師資管理"
                       >
                           <UserCog size={20} className="text-zen-700" />
@@ -271,7 +269,7 @@ export const Dashboard: React.FC = () => {
 
                       <button 
                           onClick={() => setShowStudentDirectory(true)}
-                          className="flex items-center justify-center gap-2 bg-white/60 backdrop-blur-md border border-white/50 shadow-sm text-gray-700 px-5 py-3 rounded-xl font-bold hover:bg-white hover:border-white transition-all text-base whitespace-nowrap"
+                          className="flex items-center justify-center gap-2 bg-white/60 backdrop-blur-md border border-white/50 shadow-sm text-gray-700 px-4 py-3 rounded-xl font-bold hover:bg-white hover:border-white transition-all text-sm whitespace-nowrap"
                           title="學生名錄"
                       >
                           <Users size={20} className="text-zen-700" />
@@ -279,7 +277,7 @@ export const Dashboard: React.FC = () => {
 
                       <button 
                           onClick={() => setShowExportModal(true)}
-                          className="flex items-center justify-center gap-2 bg-white/60 backdrop-blur-md border border-white/50 shadow-sm text-gray-700 px-5 py-3 rounded-xl font-bold hover:bg-white hover:border-white transition-all text-base whitespace-nowrap"
+                          className="flex items-center justify-center gap-2 bg-white/60 backdrop-blur-md border border-white/50 shadow-sm text-gray-700 px-4 py-3 rounded-xl font-bold hover:bg-white hover:border-white transition-all text-sm whitespace-nowrap"
                           title="匯出資料與維護"
                       >
                           <Download size={20} className="text-zen-700" />
@@ -288,7 +286,7 @@ export const Dashboard: React.FC = () => {
                       <button 
                           onClick={() => bgInputRef.current?.click()}
                           disabled={isUploadingBg}
-                          className="flex items-center justify-center gap-2 bg-white/60 backdrop-blur-md border border-white/50 shadow-sm text-gray-700 px-5 py-3 rounded-xl font-bold hover:bg-white hover:border-white transition-all text-base whitespace-nowrap"
+                          className="flex items-center justify-center gap-2 bg-white/60 backdrop-blur-md border border-white/50 shadow-sm text-gray-700 px-4 py-3 rounded-xl font-bold hover:bg-white hover:border-white transition-all text-sm whitespace-nowrap"
                           title="更換背景"
                       >
                           {isUploadingBg ? <Loader2 size={20} className="animate-spin text-zen-700" /> : <ImageIcon size={20} className="text-zen-700" />}
@@ -298,7 +296,7 @@ export const Dashboard: React.FC = () => {
                       <button 
                           onClick={handleLoadHistory}
                           disabled={isLoadingHistory}
-                          className="flex items-center justify-center gap-2 bg-white/60 backdrop-blur-md border border-white/50 shadow-sm text-gray-700 px-5 py-3 rounded-xl font-bold hover:bg-white hover:border-white transition-all text-base whitespace-nowrap"
+                          className="flex items-center justify-center gap-2 bg-white/60 backdrop-blur-md border border-white/50 shadow-sm text-gray-700 px-4 py-3 rounded-xl font-bold hover:bg-white hover:border-white transition-all text-sm whitespace-nowrap"
                           title="載入歷史資料"
                       >
                           {isLoadingHistory ? <Loader2 size={20} className="animate-spin text-zen-700" /> : <History size={20} className="text-zen-700" />}
@@ -311,16 +309,16 @@ export const Dashboard: React.FC = () => {
 
       {/* 
           DAY FILTER STICKY BAR
-          Updated: bg-white/30 backdrop-blur-md to float nicely over background
+          Updated: Increased vertical padding (py-3) and font size (text-sm/text-base) for better accessibility
       */}
       <div className="grid grid-cols-7 gap-1 px-1 mb-2 sticky top-[136px] z-20 bg-white/30 backdrop-blur-md py-2 md:flex md:justify-center md:gap-3 md:bg-transparent md:static rounded-xl mx-2 md:mx-0 shadow-sm md:shadow-none border border-white/20 md:border-none">
           {days.map(day => (
               <button 
                 key={day.id} 
                 onClick={() => handleDayFilter(day.id)}
-                className={`flex-shrink-0 px-1 py-2 md:px-5 md:py-3 border rounded-full text-xs md:text-base font-bold shadow-sm active:scale-95 transition-all text-center
+                className={`flex-shrink-0 px-1 py-3 md:px-6 md:py-3 border rounded-full text-sm md:text-base font-bold shadow-sm active:scale-95 transition-all text-center
                     ${selectedDay === day.id 
-                        ? 'bg-zen-600 text-white border-zen-600 ring-2 ring-zen-200' 
+                        ? 'bg-zen-600 text-white border-zen-600 ring-2 ring-zen-200 shadow-md transform scale-105' 
                         : 'bg-white/80 text-gray-700 border-white/50 hover:bg-white active:bg-zen-50'
                     }`}
               >
