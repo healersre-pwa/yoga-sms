@@ -234,6 +234,14 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
     let unsubUsers: () => void;
     let unsubSettings: () => void;
 
+    // Helper to fallback safely
+    const handleFirestoreError = (type: string, error: any) => {
+        console.error(`Firestore ${type} Error:`, error);
+        setDataSource('local');
+        // If critical data is missing in state, try load from backup
+        // This is a safety net for offline start
+    };
+
     try {
         const activeClassesQuery = query(collection(db, 'classes'), where('archived', '==', false));
 
@@ -249,20 +257,31 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
             setActiveClasses(data);
             setDataSource('firebase');
             saveToLocalBackup(KEYS.LOCAL_CLASSES, data);
-        }, (error) => console.error("Firestore Classes Error:", error));
+        }, (error) => {
+            handleFirestoreError("Classes", error);
+            // Fallback load if empty
+            if (activeClasses.length === 0) setActiveClasses(loadFromLocalBackup(KEYS.LOCAL_CLASSES));
+        });
 
         unsubInstructors = onSnapshot(collection(db, 'instructors'), (snapshot: QuerySnapshot<DocumentData>) => {
             const data = snapshot.docs.map(doc => ({ ...doc.data() as any, id: doc.id }));
             setInstructors(data);
             saveToLocalBackup(KEYS.LOCAL_INSTRUCTORS, data);
-        }, (error) => console.error(error));
+        }, (error) => {
+            handleFirestoreError("Instructors", error);
+            if (instructors.length === 0) setInstructors(loadFromLocalBackup(KEYS.LOCAL_INSTRUCTORS));
+        });
 
         unsubUsers = onSnapshot(collection(db, 'users'), (snapshot: QuerySnapshot<DocumentData>) => {
              const data = snapshot.docs.map(doc => ({ ...doc.data() as any, id: doc.id }));
              setAllUsers(data);
              saveToLocalBackup(KEYS.LOCAL_USERS, data);
              setIsLoading(false);
-        }, (error) => { console.error(error); setIsLoading(false); });
+        }, (error) => { 
+            handleFirestoreError("Users", error);
+            if (allUsers.length === 0) setAllUsers(loadFromLocalBackup(KEYS.LOCAL_USERS));
+            setIsLoading(false);
+        });
         
         unsubSettings = onSnapshot(doc(db, 'settings', 'global'), (doc) => {
             if (doc.exists()) {
@@ -276,7 +295,7 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
                     localStorage.setItem(KEYS.LOCAL_BG, data.backgroundImageUrl);
                 }
             }
-        });
+        }, (error) => console.log("Settings offline or permission denied")); // Non-critical
 
     } catch (e) {
         console.error("Firebase Init Failed:", e);
@@ -305,7 +324,7 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
   // --- SEEDING & CLEANUP LOGIC ---
   useEffect(() => {
     const maintainAdminAccount = async () => {
-        if (isLoading) return;
+        if (isLoading || dataSource === 'local') return;
 
         const admins = allUsers.filter(u => u.username === 'admin');
         

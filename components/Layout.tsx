@@ -82,11 +82,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     <div className="min-h-screen relative bg-gray-50">
       {/* 
           FIXED BACKGROUND LAYER 
-          z-index: 0 ensures it sits on top of the base body color but below content.
-          bg-cover + bg-top: Ensures the image covers the screen but anchors to the top (heads visible).
+          h-[100svh] - Use Smallest Viewport Height to prevent resizing when mobile address bar hides
+          Removed transition-all to prevent jitter during scroll on mobile
       */}
       <div 
-        className="fixed inset-0 z-0 bg-no-repeat bg-cover bg-top transition-all duration-500 ease-in-out"
+        className="fixed inset-0 h-[100svh] z-0 bg-no-repeat bg-cover bg-top"
         style={{ 
             backgroundImage: `url('${currentBg}')`,
         }} 

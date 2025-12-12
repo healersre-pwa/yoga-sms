@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useMemo } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { UserRole, ClassSession } from '../types';
 import { ClassCard } from '../components/ClassCard';
@@ -37,14 +37,20 @@ export const Dashboard: React.FC = () => {
   });
 
   const daysContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Controls visibility: Keep transparent until initial scroll is DONE.
+  const [isReady, setIsReady] = useState(false);
+  
+  // Track previous width for ResizeObserver
+  const prevWidthRef = useRef(0);
 
-  // Generate a long list of dates (The "Infinite" Scroll Effect)
+  // Generate a long list of dates
   const dateList = useMemo(() => {
       const dates: Date[] = [];
       const center = new Date(); 
       center.setHours(0,0,0,0);
       
-      const RANGE = 120; // Extended range for smooth scrolling
+      const RANGE = 120; // Extended range
       
       for (let i = -RANGE; i <= RANGE; i++) {
           const d = new Date(center);
@@ -54,33 +60,65 @@ export const Dashboard: React.FC = () => {
       return dates;
   }, []);
 
-  // Function to scroll selected date into view (CENTERED)
-  const scrollToSelected = (smooth = true) => {
-      if (!daysContainerRef.current) return;
+  // 1. Position Logic (Manual Calculation for absolute control on selection change)
+  useLayoutEffect(() => {
+      const container = daysContainerRef.current;
+      if (!container) return;
+
       const dateKey = formatDateKey(selectedDate);
-      const el = document.getElementById(`date-btn-${dateKey}`);
+      const targetEl = document.getElementById(`date-btn-${dateKey}`);
       
-      if (el) {
-          el.scrollIntoView({ 
-              behavior: smooth ? 'smooth' : 'auto', 
-              block: 'nearest', 
-              inline: 'center' 
-          });
+      if (targetEl) {
+          // Manual calculation: Element Left - Half Container + Half Element
+          const scrollPos = targetEl.offsetLeft - (container.clientWidth / 2) + (targetEl.clientWidth / 2);
+
+          if (!isReady) {
+              // INITIAL LOAD: Instant Jump
+              container.scrollLeft = scrollPos;
+              
+              // Record initial width so observer doesn't double-fire unnecessarily
+              prevWidthRef.current = container.clientWidth;
+
+              // Slight delay to ensure paint happens BEFORE we show the list
+              setTimeout(() => {
+                  setIsReady(true);
+              }, 50);
+          } else {
+              // NAVIGATION: Smooth Scroll
+              container.scrollTo({
+                  left: scrollPos,
+                  behavior: 'smooth'
+              });
+          }
       }
-  };
+  }, [selectedDate, isReady, formatDateKey]);
 
+  // 2. Handle Resize via ResizeObserver (Only trigger if WIDTH changes)
   useEffect(() => {
-      scrollToSelected(true);
-  }, [selectedDate]);
+      const container = daysContainerRef.current;
+      if (!container) return;
 
-  useEffect(() => {
-      // Initial alignment
-      setTimeout(() => scrollToSelected(false), 100);
-      // Re-align on resize to keep it centered
-      const handleResize = () => scrollToSelected(false);
-      window.addEventListener('resize', handleResize);
-      return () => window.removeEventListener('resize', handleResize);
-  }, []);
+      const observer = new ResizeObserver((entries) => {
+          for (const entry of entries) {
+              const width = entry.contentRect.width;
+              // Ignore height-only changes (mobile toolbar) or tiny differences
+              if (Math.abs(width - prevWidthRef.current) > 2) {
+                  prevWidthRef.current = width;
+
+                  // Re-center on the current selected date
+                  const dateKey = formatDateKey(selectedDate);
+                  const targetEl = document.getElementById(`date-btn-${dateKey}`);
+                  if (targetEl) {
+                       const scrollPos = targetEl.offsetLeft - (width / 2) + (targetEl.clientWidth / 2);
+                       container.scrollLeft = scrollPos; // Instant adjustment
+                  }
+              }
+          }
+      });
+
+      observer.observe(container);
+      return () => observer.disconnect();
+  }, [selectedDate, formatDateKey]);
 
   const changeWeek = (offset: number) => {
     const newDate = new Date(selectedDate);
@@ -342,13 +380,13 @@ export const Dashboard: React.FC = () => {
 
       {/* 
           INFINITE DATE SCROLLER 
-          - Mobile: 20% width (5 items)
-          - Tablet/Desktop: 14.285% width (7 items)
-          - Snap to center
+          - Added 'relative' class to fix offsetLeft calculations.
+          - Replaced window resize listener with ResizeObserver to prevent unwanted jumping on mobile toolbar toggle.
+          - Added opacity transition (invisible until positioned)
       */}
       <div 
         ref={daysContainerRef}
-        className="flex overflow-x-auto pb-2 px-0 mb-2 snap-x snap-mandatory hide-scrollbar scroll-smooth"
+        className={`relative flex overflow-x-auto pb-2 px-0 mb-2 snap-x snap-mandatory hide-scrollbar transition-opacity duration-300 ${isReady ? 'opacity-100' : 'opacity-0'}`}
       >
           {dateList.map((date) => {
               const dateKey = formatDateKey(date);
