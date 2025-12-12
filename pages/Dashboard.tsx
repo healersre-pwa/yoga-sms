@@ -249,15 +249,17 @@ export const Dashboard: React.FC = () => {
   todayStart.setHours(0,0,0,0);
 
   return (
-    <div className="space-y-4 pb-20">
+    <div className="space-y-4 pb-32">
       <header className="mb-4">
-        {/* Responsive Header Layout: 1 Col Mobile, 3 Cols Desktop */}
+        {/* Responsive Header Layout: 
+            - Use lg:flex-row to allow tablets (1024px+) to see single row.
+        */}
         <div className="flex flex-col lg:flex-row lg:items-center gap-4">
           
           {/* 1. Left: Title + View Toggle (Merged) */}
-          <div className="lg:w-1/3 min-w-0">
+          <div className="w-full lg:w-auto lg:flex-1 min-w-0">
             <div className="bg-white/40 backdrop-blur-md p-3 pl-4 rounded-xl shadow-sm border border-white/40 w-full flex justify-between items-center gap-3">
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1 overflow-hidden">
                     <h1 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-2">
                         <span className="whitespace-nowrap">
                             {currentUser.role === UserRole.ADMIN ? '教室管理' : '課程預約'}
@@ -268,9 +270,10 @@ export const Dashboard: React.FC = () => {
                             </span>
                         )}
                     </h1>
-                    <p className="text-gray-700 mt-1 flex items-center gap-2 text-sm font-medium truncate">
+                    {/* Description: Visible on ALL screens, single line, scrollable if overflow */}
+                    <p className="text-gray-700 mt-1 flex items-center gap-2 text-sm font-medium whitespace-nowrap overflow-x-auto hide-scrollbar pr-2">
                         <Calendar size={16} className="text-zen-700 shrink-0"/>
-                        <span className="truncate">
+                        <span>
                             {currentUser.role === UserRole.ADMIN 
                                 ? '管理每週固定課程。' 
                                 : ' (兩日前 09:00 開放預約)。'}
@@ -278,7 +281,7 @@ export const Dashboard: React.FC = () => {
                     </p>
                 </div>
 
-                {/* View Toggles - Moved Here */}
+                {/* View Toggles - Always visible */}
                 <div className="bg-white/60 p-1 rounded-lg border border-white/50 flex shrink-0 shadow-sm self-start sm:self-center">
                     <button 
                         onClick={() => setViewMode('normal')}
@@ -299,7 +302,8 @@ export const Dashboard: React.FC = () => {
           </div>
           
           {/* 2. Center: Date Navigation */}
-          <div className="lg:w-1/3 flex justify-center">
+          {/* Use w-auto and shrink-0 to allow it to take natural width without forcing 1/3 */}
+          <div className="w-full lg:w-auto flex justify-center shrink-0">
             <div className="flex items-center bg-white/40 backdrop-blur-md p-1 rounded-xl border border-white/40 shadow-sm w-full lg:w-auto max-w-md justify-between lg:justify-center">
                 <button onClick={() => changeWeek(-1)} className="p-3 hover:bg-white/50 rounded-lg text-gray-700 shrink-0">
                     <ChevronLeft size={20} />
@@ -318,13 +322,16 @@ export const Dashboard: React.FC = () => {
           </div>
 
           {/* 3. Right: Action Buttons (Toggle removed from here) */}
-          <div className="lg:w-1/3 flex flex-col sm:flex-row lg:justify-end gap-2 overflow-x-auto pb-1 sm:pb-0">
+          {/* Explicit flex-row and hide-scrollbar for smooth mobile scrolling */}
+          <div className="w-full lg:w-auto lg:flex-1 flex flex-row items-center gap-2 overflow-x-auto hide-scrollbar">
              
              {currentUser.role === UserRole.ADMIN && (
-                <div className="flex gap-2 shrink-0">
+                // Added lg:ml-auto to push buttons to right when space permits
+                <div className="flex gap-2 shrink-0 lg:ml-auto">
                     <button 
                         onClick={() => handleCreateClass()} 
                         className="flex items-center justify-center gap-2 bg-zen-600 text-white px-4 py-3 rounded-xl font-bold hover:bg-zen-700 shadow-lg shadow-zen-200 transition-all text-sm whitespace-nowrap"
+                        title="新增課程"
                     >
                         <PlusCircle size={20} />
                         <span className="hidden xl:inline">新增</span>
@@ -380,9 +387,7 @@ export const Dashboard: React.FC = () => {
 
       {/* 
           INFINITE DATE SCROLLER 
-          - Added 'relative' class to fix offsetLeft calculations.
-          - Replaced window resize listener with ResizeObserver to prevent unwanted jumping on mobile toolbar toggle.
-          - Added opacity transition (invisible until positioned)
+          - Reverted to 'relative' (not sticky)
       */}
       <div 
         ref={daysContainerRef}
@@ -440,6 +445,10 @@ export const Dashboard: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-4 items-start">
+        {/* 
+            DAY COLUMN CONTAINER
+            - Restored the card style container with inner sticky header
+        */}
         <div id={`day-column-${targetDateStr}`} className={`flex flex-col min-h-[100px] rounded-2xl border shadow-sm relative transition-colors ${isSelectedToday ? 'bg-zen-50/80 border-zen-200 backdrop-blur-sm' : 'bg-gray-50/70 border-gray-100 backdrop-blur-sm'}`}>
             <div className={`p-3 border-b flex flex-col items-center justify-center sticky top-0 z-10 rounded-t-2xl shadow-sm h-16 ${isSelectedToday ? 'bg-zen-100/90 border-zen-200' : 'bg-white/90 border-gray-100'}`}>
                 <span className={`font-black text-lg ${isSelectedToday ? 'text-zen-800' : 'text-gray-800'}`}>{selectedDayName}</span>

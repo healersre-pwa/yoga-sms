@@ -241,6 +241,21 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
         // If critical data is missing in state, try load from backup
         // This is a safety net for offline start
     };
+    
+    // SAFETY TIMEOUT: Force offline mode if Firebase hangs for > 3 seconds
+    const safetyTimeout = setTimeout(() => {
+        setIsLoading(prev => {
+            if (prev) {
+                console.warn("Firebase connection timed out. Forcing local mode.");
+                setDataSource('local');
+                setActiveClasses(prevC => prevC.length === 0 ? loadFromLocalBackup(KEYS.LOCAL_CLASSES) : prevC);
+                setInstructors(prevI => prevI.length === 0 ? loadFromLocalBackup(KEYS.LOCAL_INSTRUCTORS) : prevI);
+                setAllUsers(prevU => prevU.length === 0 ? loadFromLocalBackup(KEYS.LOCAL_USERS) : prevU);
+                return false;
+            }
+            return prev;
+        });
+    }, 3000);
 
     try {
         const activeClassesQuery = query(collection(db, 'classes'), where('archived', '==', false));
@@ -277,10 +292,12 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
              setAllUsers(data);
              saveToLocalBackup(KEYS.LOCAL_USERS, data);
              setIsLoading(false);
+             clearTimeout(safetyTimeout); // Clear timeout on success
         }, (error) => { 
             handleFirestoreError("Users", error);
             if (allUsers.length === 0) setAllUsers(loadFromLocalBackup(KEYS.LOCAL_USERS));
             setIsLoading(false);
+            clearTimeout(safetyTimeout);
         });
         
         unsubSettings = onSnapshot(doc(db, 'settings', 'global'), (doc) => {
@@ -304,9 +321,11 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
         setAllUsers(loadFromLocalBackup(KEYS.LOCAL_USERS));
         setIsLoading(false);
         setDataSource('local');
+        clearTimeout(safetyTimeout);
     }
 
     return () => {
+        clearTimeout(safetyTimeout);
         if (unsubClasses) unsubClasses();
         if (unsubInstructors) unsubInstructors();
         if (unsubUsers) unsubUsers();

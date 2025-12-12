@@ -212,9 +212,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             flex-1: Takes remaining height
             overflow-y-auto: Only this area scrolls
         */}
-        <main className="flex-1 w-full overflow-y-auto scroll-smooth overscroll-contain">
+        <main className="flex-1 w-full overflow-y-auto scroll-smooth">
             <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
                 {children}
+                {/* Extra spacer to ensure bottom content isn't covered by mobile nav bars */}
+                <div className="h-12 sm:h-0"></div>
             </div>
         </main>
       </div>
