@@ -216,27 +216,47 @@ export const Dashboard: React.FC = () => {
         {/* Responsive Header Layout: 1 Col Mobile, 3 Cols Desktop */}
         <div className="flex flex-col lg:flex-row lg:items-center gap-4">
           
-          {/* 1. Left: Title */}
+          {/* 1. Left: Title + View Toggle (Merged) */}
           <div className="lg:w-1/3 min-w-0">
-            <div className="bg-white/40 backdrop-blur-md p-4 rounded-xl shadow-sm border border-white/40 inline-block w-full">
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-2">
-                    <span className="whitespace-nowrap">
-                        {currentUser.role === UserRole.ADMIN ? '教室管理' : '課程預約'}
-                    </span>
-                    {dataSource === 'local' && (
-                        <span className="text-[10px] bg-red-100 text-red-600 px-2 py-1 rounded-full border border-red-200 flex items-center gap-1 font-mono align-middle whitespace-nowrap">
-                            <WifiOff size={10} /> 離線
+            <div className="bg-white/40 backdrop-blur-md p-3 pl-4 rounded-xl shadow-sm border border-white/40 w-full flex justify-between items-center gap-3">
+                <div className="min-w-0">
+                    <h1 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-2">
+                        <span className="whitespace-nowrap">
+                            {currentUser.role === UserRole.ADMIN ? '教室管理' : '課程預約'}
                         </span>
-                    )}
-                </h1>
-                <p className="text-gray-700 mt-1 flex items-center gap-2 text-sm font-medium">
-                    <Calendar size={16} className="text-zen-700 shrink-0"/>
-                    <span className="truncate">
-                        {currentUser.role === UserRole.ADMIN 
-                            ? '管理每週固定課程。' 
-                            : ' (兩日前 09:00 開放預約)。'}
-                    </span>
-                </p>
+                        {dataSource === 'local' && (
+                            <span className="text-[10px] bg-red-100 text-red-600 px-2 py-1 rounded-full border border-red-200 flex items-center gap-1 font-mono align-middle whitespace-nowrap">
+                                <WifiOff size={10} /> 離線
+                            </span>
+                        )}
+                    </h1>
+                    <p className="text-gray-700 mt-1 flex items-center gap-2 text-sm font-medium truncate">
+                        <Calendar size={16} className="text-zen-700 shrink-0"/>
+                        <span className="truncate">
+                            {currentUser.role === UserRole.ADMIN 
+                                ? '管理每週固定課程。' 
+                                : ' (兩日前 09:00 開放預約)。'}
+                        </span>
+                    </p>
+                </div>
+
+                {/* View Toggles - Moved Here */}
+                <div className="bg-white/60 p-1 rounded-lg border border-white/50 flex shrink-0 shadow-sm self-start sm:self-center">
+                    <button 
+                        onClick={() => setViewMode('normal')}
+                        className={`p-2 rounded-md transition-all ${viewMode === 'normal' ? 'bg-zen-100/80 text-zen-800 shadow-sm' : 'text-gray-600 hover:text-gray-800 hover:bg-white/40'}`}
+                        title="標準檢視"
+                    >
+                        <LayoutGrid size={18} />
+                    </button>
+                    <button 
+                        onClick={() => setViewMode('compact')}
+                        className={`p-2 rounded-md transition-all ${viewMode === 'compact' ? 'bg-zen-100/80 text-zen-800 shadow-sm' : 'text-gray-600 hover:text-gray-800 hover:bg-white/40'}`}
+                        title="精簡檢視"
+                    >
+                        <List size={18} />
+                    </button>
+                </div>
             </div>
           </div>
           
@@ -259,25 +279,9 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* 3. Right: Action Buttons */}
+          {/* 3. Right: Action Buttons (Toggle removed from here) */}
           <div className="lg:w-1/3 flex flex-col sm:flex-row lg:justify-end gap-2 overflow-x-auto pb-1 sm:pb-0">
-             <div className="bg-white/40 backdrop-blur-md p-1 rounded-xl border border-white/40 shadow-sm flex items-center justify-center shrink-0">
-                <button 
-                    onClick={() => setViewMode('normal')}
-                    className={`p-3 rounded-lg transition-all ${viewMode === 'normal' ? 'bg-zen-100/80 text-zen-800 shadow-sm' : 'text-gray-600 hover:text-gray-800 hover:bg-white/30'}`}
-                    title="標準檢視"
-                >
-                    <LayoutGrid size={20} />
-                </button>
-                <button 
-                    onClick={() => setViewMode('compact')}
-                    className={`p-3 rounded-lg transition-all ${viewMode === 'compact' ? 'bg-zen-100/80 text-zen-800 shadow-sm' : 'text-gray-600 hover:text-gray-800 hover:bg-white/30'}`}
-                    title="精簡檢視"
-                >
-                    <List size={20} />
-                </button>
-             </div>
-
+             
              {currentUser.role === UserRole.ADMIN && (
                 <div className="flex gap-2 shrink-0">
                     <button 
