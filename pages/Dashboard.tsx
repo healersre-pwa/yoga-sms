@@ -441,7 +441,7 @@ export const Dashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 gap-4 items-start">
         <div id={`day-column-${targetDateStr}`} className={`flex flex-col min-h-[100px] rounded-2xl border shadow-sm relative transition-colors ${isSelectedToday ? 'bg-zen-50/80 border-zen-200 backdrop-blur-sm' : 'bg-gray-50/70 border-gray-100 backdrop-blur-sm'}`}>
-            <div className={`p-3 border-b flex flex-col items-center justify-center sticky top-16 z-10 rounded-t-2xl shadow-sm h-16 ${isSelectedToday ? 'bg-zen-100/90 border-zen-200' : 'bg-white/90 border-gray-100'}`}>
+            <div className={`p-3 border-b flex flex-col items-center justify-center sticky top-0 z-10 rounded-t-2xl shadow-sm h-16 ${isSelectedToday ? 'bg-zen-100/90 border-zen-200' : 'bg-white/90 border-gray-100'}`}>
                 <span className={`font-black text-lg ${isSelectedToday ? 'text-zen-800' : 'text-gray-800'}`}>{selectedDayName}</span>
                 <span className={`text-sm font-mono ${isSelectedToday ? 'text-zen-700 font-bold' : 'text-gray-500'}`}>
                     {selectedDate.toLocaleDateString('zh-TW', {month:'numeric', day:'numeric'})}

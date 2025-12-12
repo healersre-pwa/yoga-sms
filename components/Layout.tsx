@@ -79,28 +79,26 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const currentBg = appBackgroundImage || defaultBg;
 
   return (
-    <div className="min-h-screen relative bg-gray-50">
+    <div className="relative bg-gray-50">
       {/* 
           FIXED BACKGROUND LAYER 
-          h-[100svh] - Use Smallest Viewport Height to prevent resizing when mobile address bar hides
-          Removed transition-all to prevent jitter during scroll on mobile
       */}
       <div 
-        className="fixed inset-0 h-[100svh] z-0 bg-no-repeat bg-cover bg-top"
+        className="fixed inset-0 h-full z-0 bg-no-repeat bg-cover bg-top"
         style={{ 
             backgroundImage: `url('${currentBg}')`,
         }} 
       />
 
       {/* 
-          CONTENT WRAPPER
-          z-index: 10 ensures content sits ON TOP of the background div.
-          position: relative creates a new stacking context.
+          APP SHELL WRAPPER
+          h-[100dvh]: Force height to match dynamic viewport (ignoring toolbar calc)
+          overflow-hidden: Prevents BODY scroll, which stops mobile url bar resizing
       */}
-      <div className="relative z-10 flex flex-col min-h-screen">
+      <div className="relative z-10 flex flex-col h-[100dvh] overflow-hidden">
         
-        {/* NAVBAR */}
-        <nav className="bg-white/50 backdrop-blur-md sticky top-0 z-40 border-b border-white/30 shadow-sm transition-all duration-300">
+        {/* NAVBAR - Flex Item (Static height) */}
+        <nav className="shrink-0 bg-white/50 backdrop-blur-md border-b border-white/30 shadow-sm z-40">
             <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between h-16">
                 
@@ -209,10 +207,15 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             </div>
         </nav>
 
-        {/* MAIN CONTENT */}
-        {/* Reduced py-6 to py-4 to make top tighter */}
-        <main className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4">
-            {children}
+        {/* 
+            MAIN SCROLL CONTAINER
+            flex-1: Takes remaining height
+            overflow-y-auto: Only this area scrolls
+        */}
+        <main className="flex-1 w-full overflow-y-auto scroll-smooth overscroll-contain">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                {children}
+            </div>
         </main>
       </div>
 
