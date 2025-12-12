@@ -216,10 +216,18 @@ export const StudentProfileModal: React.FC<Props> = ({ onClose }) => {
                     )}
                     
                     {!isEditing && isStudent && (
-                        <div className={`inline-flex items-center gap-1 mt-2 px-2.5 py-0.5 rounded-full text-xs font-bold ${membershipType === 'UNLIMITED' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
-                            {membershipType === 'UNLIMITED' ? <Infinity size={12} /> : <Coins size={12} />}
+                        <div className={`inline-flex items-start sm:items-center gap-1.5 mt-2 px-3 py-1.5 rounded-xl text-xs font-bold ${membershipType === 'UNLIMITED' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+                            <div className="mt-0.5 sm:mt-0 shrink-0">
+                                {membershipType === 'UNLIMITED' ? <Infinity size={14} /> : <Coins size={14} />}
+                            </div>
+                            
                             {membershipType === 'UNLIMITED' ? (
-                                <span>課程自由 (至 {expiry || '未設定'})</span>
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1 leading-tight">
+                                    <span className="whitespace-nowrap">課程自由</span>
+                                    <span className="text-[11px] sm:text-xs font-medium opacity-80 whitespace-nowrap">
+                                        至 {expiry || '未設定'}
+                                    </span>
+                                </div>
                             ) : (
                                 <span>剩餘點數: {credits} 點</span>
                             )}
