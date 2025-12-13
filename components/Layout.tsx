@@ -74,9 +74,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
   const isAdmin = currentUser.role === UserRole.ADMIN;
 
-  // Default background if none set
-  const defaultBg = 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?q=80&w=2070&auto=format&fit=crop';
-  const currentBg = appBackgroundImage || defaultBg;
+  // Modified: Remove default Unsplash image to prevent flash on reload
+  const currentBg = appBackgroundImage; 
 
   return (
     <div className="relative bg-gray-50">
@@ -86,7 +85,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       <div 
         className="fixed inset-0 h-full z-0 bg-no-repeat bg-cover bg-top"
         style={{ 
-            backgroundImage: `url('${currentBg}')`,
+            backgroundImage: currentBg ? `url('${currentBg}')` : undefined,
         }} 
       />
 
