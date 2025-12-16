@@ -1,0 +1,5 @@
+{
+  "name": "訂課系統 last",
+  "description": "頂級瑜伽課程預約系統。學生可以預約課程，管理員可以管理課表並透過 AI 產生代課通知。",
+  "requestFramePermissions": []
+}
