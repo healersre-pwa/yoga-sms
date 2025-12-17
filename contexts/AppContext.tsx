@@ -40,9 +40,6 @@ const KEYS = {
   LOCAL_BG: 'zenflow_local_bg'
 };
 
-// HARDCODED SUPER ADMIN ID
-const SUPER_ADMIN_ID = 'lhkePobGB2WPMJT78kff1cYvx6K2';
-
 const GUEST_USER: User = {
     id: 'guest',
     name: '訪客',
@@ -122,32 +119,12 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
                   
                   if (userDoc.exists()) {
                       const userData = userDoc.data() as User;
-                      
-                      // SECURITY FORCE: If this is the Super Admin ID, force the role to ADMIN
-                      if (firebaseUser.uid === SUPER_ADMIN_ID) {
-                          userData.role = UserRole.ADMIN;
-                      }
-
                       setCurrentUser({ ...userData, id: firebaseUser.uid }); 
                   } else {
                       // Doc doesn't exist yet (e.g. halfway through Google Register)
                       // Do NOT set current user yet, let the UI handle the "Needs Phone" state
-                      // Special case: Admin backup
-                      if (firebaseUser.uid === SUPER_ADMIN_ID) {
-                          const adminUser: User = {
-                              id: firebaseUser.uid,
-                              name: 'Super Admin',
-                              role: UserRole.ADMIN,
-                              email: firebaseUser.email || '',
-                              username: 'admin',
-                              avatarUrl: '',
-                              hasPaid: true
-                          };
-                          setCurrentUser(adminUser);
-                      } else {
-                          // Standard user with no doc -> Treat as Guest until they finish registration
-                          setCurrentUser(GUEST_USER);
-                      }
+                      // Standard user with no doc -> Treat as Guest until they finish registration
+                      setCurrentUser(GUEST_USER);
                   }
               } catch (e) {
                   console.error("Error fetching user profile:", e);
