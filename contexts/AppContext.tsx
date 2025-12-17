@@ -39,6 +39,9 @@ const KEYS = {
   LOCAL_BG: 'zenflow_local_bg'
 };
 
+// HARDCODED SUPER ADMIN ID
+const SUPER_ADMIN_ID = 'lhkePobGB2WPMJT78kff1cYvx6K2';
+
 const GUEST_USER: User = {
     id: 'guest',
     name: '訪客',
@@ -113,11 +116,31 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
                   
                   if (userDoc.exists()) {
                       const userData = userDoc.data() as User;
+                      
+                      // SECURITY FORCE: If this is the Super Admin ID, force the role to ADMIN
+                      // This ensures the UI works correctly even if DB data is weird
+                      if (firebaseUser.uid === SUPER_ADMIN_ID) {
+                          userData.role = UserRole.ADMIN;
+                      }
+
                       setCurrentUser({ ...userData, id: firebaseUser.uid }); // Ensure ID matches
                   } else {
                       // Fallback: This shouldn't happen normally unless DB was wiped but Auth remains
                       console.warn("User authenticated but no Firestore record found.");
-                      // Optional: Create a default record here if needed
+                      
+                      // Safety net for Admin
+                      if (firebaseUser.uid === SUPER_ADMIN_ID) {
+                          const adminUser: User = {
+                              id: firebaseUser.uid,
+                              name: 'Super Admin',
+                              role: UserRole.ADMIN,
+                              email: firebaseUser.email || '',
+                              username: 'admin',
+                              avatarUrl: '',
+                              hasPaid: true
+                          };
+                          setCurrentUser(adminUser);
+                      }
                   }
               } catch (e) {
                   console.error("Error fetching user profile:", e);
