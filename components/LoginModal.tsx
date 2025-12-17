@@ -187,17 +187,37 @@ export const LoginModal: React.FC<Props> = ({ isOpen, onClose }) => {
   );
 
   // Fallback Message for LINE users
-  const LineBrowserWarning = () => (
-      <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-center">
-          <div className="flex items-center justify-center gap-2 text-gray-500 text-xs mb-1">
-              <Globe size={14} />
-              <span>Google 登入不支援 LINE 瀏覽器</span>
-          </div>
-          <p className="text-xs text-gray-400">
-              請使用 Email 登入，或點擊右上角選單<br/>切換至 Chrome/Safari 開啟以使用 Google 帳號
-          </p>
-      </div>
-  );
+  const LineBrowserWarning = () => {
+      const handleOpenExternal = () => {
+          const url = window.location.href;
+          // Prevent infinite loop if already there
+          if (url.includes('openExternalBrowser=1')) return;
+          
+          const separator = url.includes('?') ? '&' : '?';
+          window.location.href = `${url}${separator}openExternalBrowser=1`;
+      };
+
+      return (
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center space-y-3">
+            <div className="flex items-center justify-center gap-2 text-gray-500 text-xs font-bold">
+                <Globe size={14} />
+                <span>Google 登入不支援 LINE 瀏覽器</span>
+            </div>
+            <p className="text-xs text-gray-400 leading-relaxed">
+                為確保帳號安全，Google 限制在此環境登入。<br/>
+                請點擊下方按鈕，切換至預設瀏覽器以繼續。
+            </p>
+            <button 
+                type="button"
+                onClick={handleOpenExternal}
+                className="w-full bg-blue-600 text-white font-bold py-2.5 rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center justify-center gap-2 shadow-sm"
+            >
+                <Chrome size={16} />
+                切換至系統瀏覽器開啟
+            </button>
+        </div>
+      );
+  };
 
   // Render Content based on Mode
   const renderContent = () => {
