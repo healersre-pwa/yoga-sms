@@ -4,7 +4,7 @@ import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 // 您提供的 Firebase 設定
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: "AIzaSyCXEXVv1ndYULRxjR6ZOfy3t19RgLUvvfU",
   authDomain: "yoga-pwa-158e2.firebaseapp.com",
   projectId: "yoga-pwa-158e2",

@@ -9,7 +9,7 @@ interface Props {
 }
 
 export const StudentDirectoryModal: React.FC<Props> = ({ onClose }) => {
-  const { students, classes, addStudent, updateStudent, deleteStudent, cancelClass, resetStudentPassword } = useApp();
+  const { students, classes, addStudent, updateStudent, deleteStudent, cancelClass, resetStudentPassword, adminCreateStudent } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -18,6 +18,7 @@ export const StudentDirectoryModal: React.FC<Props> = ({ onClose }) => {
   
   // Feedback States
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
   // Reset Password UI State
@@ -168,11 +169,25 @@ export const StudentDirectoryModal: React.FC<Props> = ({ onClose }) => {
         }, {} as any);
 
         if (isCreating) {
-            // Admin creates a "Ghost" user in Firestore (no Auth)
-            const newId = addStudent(dataToSave);
-            if (newId) {
-                setSelectedStudentId(newId);
-                setIsCreating(false);
+            // New Logic: Check if Email is present for real Auth creation
+            if (formData.email) {
+                const tempPassword = formData.password || Math.random().toString(36).slice(-8); // Generate random if not provided (though input is usually hidden)
+                
+                const result = await adminCreateStudent(formData.email, tempPassword, dataToSave);
+                
+                if (result.success) {
+                    alert(`✅ 建立成功！\n\n已發送密碼重置信至 ${formData.email}。\n請學生收信並設定新密碼。`);
+                    handleBackToList(); // Return to list to refresh
+                } else {
+                    alert(`建立失敗：${result.message}`);
+                }
+            } else {
+                // Legacy: Ghost user (No Auth)
+                const newId = addStudent(dataToSave);
+                if (newId) {
+                    setSelectedStudentId(newId);
+                    setIsCreating(false);
+                }
             }
         } else if (selectedStudentId) {
             await updateStudent(selectedStudentId, dataToSave);
@@ -188,11 +203,28 @@ export const StudentDirectoryModal: React.FC<Props> = ({ onClose }) => {
     }
   };
 
-  const handleDelete = () => {
-    if (selectedStudentId) {
-        deleteStudent(selectedStudentId);
-        handleBackToList();
-        setFormData({ name: '', username: '', email: '', password: '', phoneNumber: '', hasPaid: false, avatarUrl: '' });
+  const handleDelete = async () => {
+    if (!selectedStudentId) return;
+    
+    setIsDeleting(true);
+    try {
+        const result = await deleteStudent(selectedStudentId);
+        
+        if (!result.success) {
+            alert(result.message || "刪除失敗");
+        } else {
+            if (result.message) {
+                // Warning message about Partial delete (Auth still exists)
+                alert(result.message);
+            }
+            handleBackToList();
+            setFormData({ name: '', username: '', email: '', password: '', phoneNumber: '', hasPaid: false, avatarUrl: '' });
+        }
+    } catch (e) {
+        console.error(e);
+        alert("系統錯誤");
+    } finally {
+        setIsDeleting(false);
     }
   };
   
@@ -504,7 +536,10 @@ export const StudentDirectoryModal: React.FC<Props> = ({ onClose }) => {
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">Email (選填)</label>
+                                    <label className="block text-sm font-bold text-gray-500 uppercase tracking-wider mb-2 flex justify-between">
+                                        Email (必填)
+                                        {isCreating && !formData.email && <span className="text-red-500 text-[10px] self-end">建立帳號需 Email</span>}
+                                    </label>
                                     <div className="relative">
                                         <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                                         <input 
@@ -515,6 +550,11 @@ export const StudentDirectoryModal: React.FC<Props> = ({ onClose }) => {
                                             placeholder="手動建檔"
                                         />
                                     </div>
+                                    {isCreating && formData.email && (
+                                        <p className="text-[10px] text-green-600 mt-1 flex items-center gap-1">
+                                            <Check size={10} /> 將自動發送密碼重置信
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div>
@@ -531,6 +571,12 @@ export const StudentDirectoryModal: React.FC<Props> = ({ onClose }) => {
                                     </div>
                                 </div>
                             </div>
+                            
+                            {isCreating && (
+                                <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl text-xs text-blue-800 leading-relaxed">
+                                    💡 填入 <b>Email</b> 後按下儲存，系統將自動建立帳號並發送「密碼重置信」給學生。學生點擊信中連結即可設定自己的密碼。
+                                </div>
+                            )}
 
                             {!isCreating && (
                                 <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-100">
@@ -610,20 +656,23 @@ export const StudentDirectoryModal: React.FC<Props> = ({ onClose }) => {
                                     <div className="flex gap-2 w-full sm:w-auto">
                                         <button 
                                             onClick={() => setShowDeleteConfirm(false)}
+                                            disabled={isDeleting}
                                             className="flex-1 px-4 py-3 rounded-xl text-gray-600 bg-gray-100 text-base font-medium hover:bg-gray-200"
                                         >
                                             取消
                                         </button>
                                         <button 
                                             onClick={handleDelete}
+                                            disabled={isDeleting}
                                             className="flex-1 px-4 py-3 rounded-xl text-white bg-red-600 text-base font-medium hover:bg-red-700 flex items-center justify-center gap-2 shadow-md"
                                         >
-                                            確認刪除
+                                            {isDeleting ? <Loader2 size={20} className="animate-spin" /> : "確認刪除"}
                                         </button>
                                     </div>
                                 ) : (
                                     <button 
                                         onClick={() => setShowDeleteConfirm(true)}
+                                        disabled={isDeleting}
                                         className="text-red-500 hover:text-red-700 hover:bg-red-50 px-5 py-3 rounded-xl text-base font-medium flex items-center gap-2 transition-colors w-full sm:w-auto justify-center sm:justify-start border border-red-100 sm:border-none"
                                     >
                                         <Trash2 size={20} />
@@ -634,7 +683,7 @@ export const StudentDirectoryModal: React.FC<Props> = ({ onClose }) => {
                             <div className="flex gap-3 w-full sm:w-auto ml-auto">
                                 <button 
                                     onClick={handleSave}
-                                    disabled={!formData.name || isSaving}
+                                    disabled={!formData.name || isSaving || isDeleting}
                                     className={`flex-1 px-8 py-3.5 rounded-xl font-bold shadow-lg shadow-zen-200 flex items-center justify-center gap-2 text-base transition-all
                                         ${showSuccess 
                                             ? 'bg-green-600 text-white hover:bg-green-700' 
@@ -654,7 +703,7 @@ export const StudentDirectoryModal: React.FC<Props> = ({ onClose }) => {
                                     ) : (
                                         <>
                                             <Save size={20} />
-                                            {isCreating ? '建立 (手動)' : '儲存'}
+                                            {isCreating ? '建立 & 發送重置信' : '儲存'}
                                         </>
                                     )}
                                 </button>

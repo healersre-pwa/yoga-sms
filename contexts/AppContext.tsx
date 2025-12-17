@@ -1,15 +1,17 @@
 
 import React, { createContext, useContext, useState, useEffect, PropsWithChildren, useCallback } from 'react';
 import { AppState, ClassSession, Instructor, User, UserRole, AppContextType } from '../types';
-import { db, auth } from '../firebaseConfig';
+import { db, auth, firebaseConfig } from '../firebaseConfig';
 import { 
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
   sendPasswordResetEmail,
+  getAuth,
   User as FirebaseUser
 } from 'firebase/auth';
+import { initializeApp, deleteApp } from 'firebase/app';
 import { 
   collection, 
   onSnapshot, 
@@ -359,6 +361,53 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
               return { success: false, message: '密碼強度不足 (至少6位)' };
           }
           return { success: false, message: '註冊失敗，請檢查格式' };
+      }
+  };
+  
+  // --- ADMIN CREATE STUDENT (Secondary App Technique) ---
+  const adminCreateStudent = async (email: string, tempPass: string, userData: Partial<User>): Promise<{ success: boolean; message?: string }> => {
+      // Initialize a secondary app so we don't log out the admin
+      let secondaryApp;
+      try {
+          secondaryApp = initializeApp(firebaseConfig, "SecondaryApp");
+          const secondaryAuth = getAuth(secondaryApp);
+          
+          // 1. Create User in Auth
+          const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, tempPass);
+          const uid = userCredential.user.uid;
+          
+          // 2. Create Firestore Document (using main app DB)
+          const newUser: User = {
+              id: uid,
+              name: userData.name || '新學生',
+              email: email,
+              username: email.split('@')[0],
+              role: UserRole.STUDENT,
+              avatarUrl: userData.avatarUrl || '',
+              phoneNumber: userData.phoneNumber || '',
+              membershipType: 'CREDIT',
+              credits: userData.credits || 0,
+              hasPaid: false,
+              unlimitedExpiry: userData.unlimitedExpiry || ''
+          };
+          
+          await setDoc(doc(db, 'users', uid), newUser);
+          
+          // 3. Send Password Reset Email immediately
+          await sendPasswordResetEmail(secondaryAuth, email);
+          
+          // 4. Sign out secondary (cleanup)
+          await signOut(secondaryAuth);
+          
+          return { success: true };
+      } catch (error: any) {
+          console.error("Admin Create Student Error:", error);
+          if (error.code === 'auth/email-already-in-use') return { success: false, message: '此 Email 已被註冊' };
+          return { success: false, message: error.message || '建立失敗' };
+      } finally {
+          if (secondaryApp) {
+              await deleteApp(secondaryApp);
+          }
       }
   };
   
@@ -761,7 +810,27 @@ Email：${currentUser.email || '-'}
       } catch(e) { console.error(e); }
   };
 
-  const deleteStudent = (id: string) => { try { deleteDoc(doc(db, 'users', id)); } catch(e) {} };
+  // --- DELETE STUDENT (FRONTEND ONLY) ---
+  const deleteStudent = async (id: string): Promise<{ success: boolean; message?: string }> => {
+      const targetStudent = allUsers.find(u => u.id === id);
+      
+      // We can only delete the Firestore document from the client
+      try {
+          await deleteDoc(doc(db, 'users', id));
+          
+          let msg = '';
+          if (targetStudent?.email) {
+              msg = `已刪除學生資料庫檔案。\n\n(⚠️ 注意：因無後端支援，Firebase Auth 登入帳號 (${targetStudent.email}) 仍存在，需至 Firebase Console 手動刪除以免佔用 Email)`;
+          } else {
+              msg = '已成功刪除學生資料。';
+          }
+          
+          return { success: true, message: msg };
+      } catch (e: any) {
+          console.error("Firestore deletion failed:", e);
+          return { success: false, message: '資料庫刪除失敗，請檢查權限或網路' };
+      }
+  };
   
   const resetStudentPassword = async (id: string) => {
         const student = allUsers.find(u => u.id === id);
@@ -795,7 +864,7 @@ Email：${currentUser.email || '-'}
       updateClassInstructor, addInstructor, updateInstructor, deleteInstructor,
       addStudent, updateStudent, updateUser, deleteStudent, resetStudentPassword, updateAppLogo, updateAppBackgroundImage,
       getNextClassDate, formatDateKey, checkInstructorConflict, isLoading, dataSource,
-      fetchArchivedClasses, pruneArchivedClasses, notifyAdminPayment
+      fetchArchivedClasses, pruneArchivedClasses, notifyAdminPayment, adminCreateStudent
     }}>
       {children}
     </AppContext.Provider>

@@ -80,6 +80,7 @@ export interface AppContextType extends AppState {
   setLoginModalOpen: (isOpen: boolean) => void;
   
   registerStudent: (userData: Partial<User>) => Promise<{ success: boolean; message?: string }>;
+  adminCreateStudent: (email: string, tempPass: string, userData: Partial<User>) => Promise<{ success: boolean; message?: string }>;
 
   bookClass: (classId: string, userId?: string, targetDate?: Date) => Promise<{ success: boolean; message?: string }>;
   cancelClass: (classId: string, userId?: string, targetDate?: Date) => Promise<void>;
@@ -97,7 +98,7 @@ export interface AppContextType extends AppState {
   addStudent: (student: Partial<User>) => string;
   updateStudent: (id: string, updates: Partial<User>) => void;
   updateUser: (id: string, updates: Partial<User>) => Promise<void>;
-  deleteStudent: (id: string) => void;
+  deleteStudent: (id: string) => Promise<{ success: boolean; message?: string }>;
   resetStudentPassword: (id: string) => Promise<void>; 
   
   updateAppLogo: (base64Image: string) => Promise<void>;
