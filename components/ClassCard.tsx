@@ -48,7 +48,11 @@ export const ClassCard: React.FC<ClassCardProps> = ({
   const isBooked = dailyBookings.includes(currentUser.id);
   
   // Calculate valid students only (exclude ghosts) from the daily list
-  const validEnrolledCount = dailyBookings.filter(id => students.some(s => s.id === id)).length;
+  // If we have student data (Logged in), we filter ghosts.
+  // If we don't (Guest), we trust the raw count.
+  const validEnrolledCount = students.length > 0 
+      ? dailyBookings.filter(id => students.some(s => s.id === id)).length
+      : dailyBookings.length;
   
   const isFull = validEnrolledCount >= session.capacity;
   
@@ -68,7 +72,9 @@ export const ClassCard: React.FC<ClassCardProps> = ({
   const expiry = liveStudent?.unlimitedExpiry;
   const todayStr = formatDateKey(new Date());
   
-  const isExpired = membershipType === 'UNLIMITED' && (!expiry || expiry < todayStr);
+  // LOGIC FIX: Check if expiry covers the CLASS DATE, not just today
+  const isExpiredForClass = membershipType === 'UNLIMITED' && (!expiry || expiry < dateKey);
+  
   const pointsCost = session.pointsCost ?? 1;
   const isInsufficient = membershipType === 'CREDIT' && credits < pointsCost;
   
@@ -179,8 +185,8 @@ export const ClassCard: React.FC<ClassCardProps> = ({
                disabled = true;
                label = '未開放';
                subLabel = ''; // Just show "未開放" as requested
-           } else if (isExpired) {
-               // Expired Unlimited
+           } else if (isExpiredForClass) {
+               // Expired Unlimited (Checked against class date)
                disabled = true;
                label = '會籍過期';
            } else if (isInsufficient) {

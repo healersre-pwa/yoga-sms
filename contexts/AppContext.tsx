@@ -70,6 +70,11 @@ const generateSequentialId = (prefix: string, existingIds: string[]): string => 
     return `${prefix}${num}`;
 };
 
+// Helper: Safe Decimal Subtraction to avoid 0.3000000004 issues
+const safeSubtract = (a: number, b: number) => {
+    return Math.round((a - b) * 100) / 100;
+};
+
 export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User>(GUEST_USER);
   const [isLoginModalOpen, setLoginModalOpen] = useState(false);
@@ -230,13 +235,13 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
       } catch (e) { throw e; }
   };
 
+  // --- 1. PUBLIC DATA SUBSCRIPTIONS (Classes, Instructors, Settings) ---
   useEffect(() => {
     let unsubClasses: () => void;
     let unsubInstructors: () => void;
-    let unsubUsers: () => void;
     let unsubSettings: () => void;
 
-    // SAFETY TIMEOUT
+    // SAFETY TIMEOUT: If Firebase takes too long, fallback to local backup
     const safetyTimeout = setTimeout(() => {
         setIsLoading(prev => {
             if (prev) {
@@ -257,20 +262,16 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
             setActiveClasses(data);
             setDataSource('firebase');
             saveToLocalBackup(KEYS.LOCAL_CLASSES, data);
+            
+            // Once classes are loaded, we can consider the app 'ready' for display
+            setIsLoading(false);
+            clearTimeout(safetyTimeout);
         });
 
         unsubInstructors = onSnapshot(collection(db, 'instructors'), (snapshot) => {
             const data = snapshot.docs.map(doc => ({ ...doc.data() as any, id: doc.id }));
             setInstructors(data);
             saveToLocalBackup(KEYS.LOCAL_INSTRUCTORS, data);
-        });
-
-        unsubUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
-             const data = snapshot.docs.map(doc => ({ ...doc.data() as any, id: doc.id }));
-             setAllUsers(data);
-             saveToLocalBackup(KEYS.LOCAL_USERS, data);
-             setIsLoading(false);
-             clearTimeout(safetyTimeout);
         });
         
         unsubSettings = onSnapshot(doc(db, 'settings', 'global'), (doc) => {
@@ -292,10 +293,34 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
         clearTimeout(safetyTimeout);
         if (unsubClasses) unsubClasses();
         if (unsubInstructors) unsubInstructors();
-        if (unsubUsers) unsubUsers();
         if (unsubSettings) unsubSettings();
     };
   }, []);
+
+  // --- 2. PROTECTED DATA SUBSCRIPTIONS (Users) ---
+  useEffect(() => {
+      let unsubUsers: () => void;
+
+      if (currentUser.id !== 'guest') {
+          try {
+             unsubUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
+                 const data = snapshot.docs.map(doc => ({ ...doc.data() as any, id: doc.id }));
+                 setAllUsers(data);
+                 saveToLocalBackup(KEYS.LOCAL_USERS, data);
+             }, (error) => {
+                 console.warn("Users listener failed (permission?):", error.message);
+             });
+          } catch(e) {
+              console.error(e);
+          }
+      } else {
+          setAllUsers([]);
+      }
+
+      return () => {
+          if (unsubUsers) unsubUsers();
+      };
+  }, [currentUser.id]);
 
   const formatDateKey = (date: Date): string => {
       const year = date.getFullYear();
@@ -342,7 +367,7 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
     }
   };
 
-  // --- REGISTRATION LOGIC (Firebase Auth) ---
+  // --- REGISTRATION LOGIC ---
   const registerStudent = async (userData: Partial<User>): Promise<{ success: boolean; message?: string }> => {
       const email = userData.email?.trim();
       const password = userData.password;
@@ -350,17 +375,14 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
       if (!email || !password) return { success: false, message: '請輸入 Email 和密碼' };
 
       try {
-          // 1. Create Auth User
           const userCredential = await createUserWithEmailAndPassword(auth, email, password);
           const uid = userCredential.user.uid;
 
-          // 2. Create Firestore User Document using UID
-          // Determine Role: Default STUDENT, check whitelist for ADMIN if needed (or manually set in console)
           const newUser: User = {
               id: uid,
               name: userData.name || '新學生',
               email: email,
-              username: email.split('@')[0], // Generate username handle
+              username: email.split('@')[0], 
               role: UserRole.STUDENT,
               avatarUrl: userData.avatarUrl || '',
               phoneNumber: userData.phoneNumber || '',
@@ -372,8 +394,6 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
           };
 
           await setDoc(doc(db, 'users', uid), newUser);
-
-          // Auto-login is handled by onAuthStateChanged
           return { success: true };
       } catch (error: any) {
           console.error("Registration Error:", error);
@@ -387,19 +407,16 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
       }
   };
   
-  // --- ADMIN CREATE STUDENT (Secondary App Technique) ---
+  // --- ADMIN CREATE STUDENT ---
   const adminCreateStudent = async (email: string, tempPass: string, userData: Partial<User>): Promise<{ success: boolean; message?: string }> => {
-      // Initialize a secondary app so we don't log out the admin
       let secondaryApp;
       try {
           secondaryApp = initializeApp(firebaseConfig, "SecondaryApp");
           const secondaryAuth = getAuth(secondaryApp);
           
-          // 1. Create User in Auth
           const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, tempPass);
           const uid = userCredential.user.uid;
           
-          // 2. Create Firestore Document (using main app DB)
           const newUser: User = {
               id: uid,
               name: userData.name || '新學生',
@@ -415,11 +432,7 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
           };
           
           await setDoc(doc(db, 'users', uid), newUser);
-          
-          // 3. Send Password Reset Email immediately
           await sendPasswordResetEmail(secondaryAuth, email);
-          
-          // 4. Sign out secondary (cleanup)
           await signOut(secondaryAuth);
           
           return { success: true };
@@ -539,11 +552,11 @@ Email：${currentUser.email || '-'}
                     if (!window.confirm(`⚠️ 該學生為「課程自由」會員，但尚未設定到期日。\n\n確定要幫他預約嗎？`)) return { success: false, message: 'Cancelled' };
                 } else { return { success: false, message: '預約失敗：您的課程自由會籍無效或已過期。' }; }
             } else {
-                const todayStr = formatDateKey(new Date());
-                if (targetUser.unlimitedExpiry < todayStr) {
+                // FIXED LOGIC: Compare against the CLASS DATE (bookingDateKey), not Today
+                if (targetUser.unlimitedExpiry < bookingDateKey) {
                     if (isAdminOverride) {
-                        if (!window.confirm(`⚠️ 該學生的課程自由會籍已於 ${targetUser.unlimitedExpiry} 過期。\n\n確定要幫他預約嗎？`)) return { success: false, message: 'Cancelled' };
-                    } else { return { success: false, message: `預約失敗：您的會籍已於 ${targetUser.unlimitedExpiry} 到期。` }; }
+                        if (!window.confirm(`⚠️ 該學生的課程自由會籍將於 ${targetUser.unlimitedExpiry} 到期，無法涵蓋 ${bookingDateKey} 的課程。\n\n確定要幫他預約嗎？`)) return { success: false, message: 'Cancelled' };
+                    } else { return { success: false, message: `預約失敗：您的會籍將於 ${targetUser.unlimitedExpiry} 到期，無法預約此課程。` }; }
                 }
             }
         } else {
@@ -603,7 +616,11 @@ Email：${currentUser.email || '-'}
             let newBalance = -1;
             if (userDoc) {
                 const freshUserData = userDoc.data();
-                newBalance = (freshUserData.credits || 0) - (currentClass.pointsCost ?? 1);
+                const currentBalance = freshUserData.credits || 0;
+                const cost = currentClass.pointsCost ?? 1;
+                // SAFE MATH: Prevent floating point errors (e.g. 1.2 - 0.4 = 0.799999)
+                newBalance = safeSubtract(currentBalance, cost);
+                
                 if (newBalance < 0) throw "點數不足";
             }
 
@@ -658,7 +675,10 @@ Email：${currentUser.email || '-'}
             let newBalance = -1;
             if (userDoc && userDoc.exists()) {
                 const freshUserData = userDoc.data();
-                newBalance = (freshUserData.credits || 0) + (currentClass.pointsCost ?? 1);
+                const currentBalance = freshUserData.credits || 0;
+                const cost = currentClass.pointsCost ?? 1;
+                // SAFE MATH ADDITION
+                newBalance = Math.round((currentBalance + cost) * 100) / 100;
             }
 
             transaction.update(classRef, { [`bookings.${bookingDateKey}`]: freshDailyList.filter((id: string) => id !== targetUserId) });
@@ -759,7 +779,12 @@ Email：${currentUser.email || '-'}
                 if (uDoc.exists()) {
                     const userData = uDoc.data();
                     if ((userData.membershipType || 'CREDIT') === 'CREDIT') {
-                        transaction.update(userRefs[index], { credits: (userData.credits || 0) + (refundMap.get(userIds[index]) || 0) });
+                        // Safe Math for Refunds
+                        const currentCredits = userData.credits || 0;
+                        const refundAmount = refundMap.get(userIds[index]) || 0;
+                        const newTotal = Math.round((currentCredits + refundAmount) * 100) / 100;
+                        
+                        transaction.update(userRefs[index], { credits: newTotal });
                     }
                 }
             });
