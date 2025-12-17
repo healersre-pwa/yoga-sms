@@ -1,0 +1,117 @@
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#568479" />
+
+  <!-- iOS PWA 必備 -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ZenFlow">
+
+  <!-- iOS Icons -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-512.png">
+
+  <!-- PWA manifest -->
+  <link rel="manifest" href="/assets/manifest-CYEhAaUR.json" />
+
+  <title>ZenFlow Yoga</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: {
+            zen: {
+              50:'#f4f7f6',100:'#e3ebe8',200:'#c5d9d3',300:'#9dbfb6',
+              400:'#75a095',500:'#568479',600:'#436961',700:'#38554f',
+              800:'#304642',900:'#293a37'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      margin: 0;
+      /* 背景色改為淺灰，主要背景圖改由 React Layout 控制以避免手機版跳動 */
+      background-color: #f4f7f6;
+      min-height: 100vh;
+      /* 移除 background-image 相關設定，解決跳動問題 */
+    }
+
+    /* Hide scrollbar for Chrome, Safari and Opera */
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    /* Hide scrollbar for IE, Edge and Firefox */
+    .hide-scrollbar {
+      -ms-overflow-style: none;  /* IE and Edge */
+      scrollbar-width: none;  /* Firefox */
+    }
+  </style>
+
+  <!-- Import map -->
+
+
+  <!-- Global error handler -->
+  <script>
+    window.addEventListener('error', function(e) {
+      const root = document.getElementById('root');
+      if(root && root.innerText.includes('Loading')) {
+        root.innerHTML = `<div style="padding:20px; color:red;">
+          <h3>系統發生錯誤 (Application Error)</h3>
+          <p>${e.message}</p>
+          <p>若您是在 GitHub Pages 瀏覽，請注意瀏覽器無法直接執行 .tsx 檔案，需經過 Build 步驟。</p>
+        </div>`;
+      }
+    });
+  </script>
+
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
+    "vite": "https://aistudiocdn.com/vite@^7.2.4",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
+    "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+    "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js",
+    "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js",
+    "vite-plugin-pwa": "https://aistudiocdn.com/vite-plugin-pwa@^1.2.0",
+    "firebase/": "https://esm.sh/firebase@^12.7.0/"
+  }
+}
+</script>
+  <script type="module" crossorigin src="/assets/index-D8f1aMyH.js"></script>
+<link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
+
+<body>
+  <div id="root"></div>
+
+  <!-- Main React app -->
+
+  <!-- Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.log('SW registered:', reg))
+          .catch(err => console.log('SW registration failed:', err));
+      });
+    }
+  </script>
+</body>
+</html>
