@@ -236,6 +236,70 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
           return { deletedDocs, cleanedRecords };
       } catch (e) { throw e; }
   };
+  
+  // --- CLEANUP INACTIVE STUDENTS ---
+  const cleanupInactiveStudents = async (): Promise<{ count: number }> => {
+      const todayStr = formatDateKey(new Date());
+      const studentsWithFutureBookings = new Set<string>();
+
+      // 1. Identify students with future bookings (Safety Check)
+      activeClasses.forEach(c => {
+          if (c.bookings) {
+              Object.entries(c.bookings).forEach(([dateKey, userIds]) => {
+                  if (dateKey >= todayStr) {
+                      (userIds as string[]).forEach(id => studentsWithFutureBookings.add(id));
+                  }
+              });
+          }
+      });
+
+      // 2. Identify Targets
+      const targets = allUsers.filter(u => {
+          // Safety: Never delete admins or non-students
+          if (u.role !== UserRole.STUDENT) return false;
+          
+          // Safety: Never delete if they have future bookings
+          if (studentsWithFutureBookings.has(u.id)) return false;
+
+          // Check Credits
+          const hasCredits = (u.credits || 0) > 0;
+          if (hasCredits) return false; // Keep if they have money
+
+          // Check Membership Validity
+          const isUnlimited = u.membershipType === 'UNLIMITED';
+          const isUnlValid = isUnlimited && (u.unlimitedExpiry && u.unlimitedExpiry >= todayStr);
+          if (isUnlValid) return false; // Keep if membership valid
+
+          // If we reach here: No credits, No valid membership, No future bookings.
+          return true; 
+      });
+
+      if (targets.length === 0) return { count: 0 };
+
+      // 3. Batch Delete
+      const batchLimit = 400; // Safe limit
+      let currentBatch = writeBatch(db);
+      let count = 0;
+      let totalDeleted = 0;
+
+      for (const u of targets) {
+          currentBatch.delete(doc(db, 'users', u.id));
+          count++;
+          totalDeleted++;
+
+          if (count >= batchLimit) {
+              await currentBatch.commit();
+              currentBatch = writeBatch(db);
+              count = 0;
+          }
+      }
+
+      if (count > 0) {
+          await currentBatch.commit();
+      }
+
+      return { count: totalDeleted };
+  };
 
   // --- 1. PUBLIC DATA SUBSCRIPTIONS (Classes, Instructors, Settings) ---
   useEffect(() => {
@@ -972,7 +1036,7 @@ Email：${currentUser.email || '-'}
       updateClassInstructor, addInstructor, updateInstructor, deleteInstructor,
       addStudent, updateStudent, updateUser, deleteStudent, resetStudentPassword, updateAppLogo, updateAppBackgroundImage,
       getNextClassDate, formatDateKey, checkInstructorConflict, isLoading, dataSource,
-      fetchArchivedClasses, pruneArchivedClasses, notifyAdminPayment, adminCreateStudent,
+      fetchArchivedClasses, pruneArchivedClasses, cleanupInactiveStudents, notifyAdminPayment, adminCreateStudent,
       loginWithGoogle, registerGoogleUser
     }}>
       {children}

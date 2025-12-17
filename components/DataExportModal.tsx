@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { X, Download, FileSpreadsheet, Users, UserCog, Calendar, FileText, Database, Table, Loader2, Trash2, AlertTriangle, CheckCircle } from 'lucide-react';
+import { X, Download, FileSpreadsheet, Users, UserCog, Calendar, FileText, Database, Table, Loader2, Trash2, AlertTriangle, CheckCircle, UserMinus } from 'lucide-react';
 
 interface Props {
   onClose: () => void;
@@ -9,15 +9,21 @@ interface Props {
 
 // UI State for Prune Flow
 type PruneStep = 'IDLE' | 'CONFIRM' | 'PRUNING' | 'SUCCESS';
+type CleanStep = 'IDLE' | 'CONFIRM' | 'PROCESSING' | 'SUCCESS';
 
 export const DataExportModal: React.FC<Props> = ({ onClose }) => {
-  const { students, instructors, classes, fetchArchivedClasses, allClassesHistory, pruneArchivedClasses } = useApp();
+  const { students, instructors, classes, fetchArchivedClasses, allClassesHistory, pruneArchivedClasses, cleanupInactiveStudents } = useApp();
   const [isPreparing, setIsPreparing] = useState(false);
   
   // Prune State
   const [pruneStep, setPruneStep] = useState<PruneStep>('IDLE');
   const [pruneMonths, setPruneMonths] = useState<number>(3); // Default 3 months
   const [pruneStats, setPruneStats] = useState({ deletedDocs: 0, cleanedRecords: 0 });
+
+  // Cleanup State
+  const [cleanStep, setCleanStep] = useState<CleanStep>('IDLE');
+  const [inactiveCount, setInactiveCount] = useState<number | null>(null);
+  const [deletedCount, setDeletedCount] = useState(0);
 
   const downloadCSV = (filename: string, headers: string[], rows: (string | number)[][]) => {
     const csvContent = [
@@ -211,6 +217,33 @@ export const DataExportModal: React.FC<Props> = ({ onClose }) => {
       }
   };
 
+  // --- Cleanup Handlers ---
+  const handleStartCleanup = async () => {
+      // Just check the potential logic first? Or run the real check?
+      // Since context function does the check, we just invoke it and it will return count but DELETE
+      // Wait, we need a "Check" mode first? No, the context function executes immediately.
+      // So we need to ask permission FIRST based on "theory".
+      // But we can't know the count without running the logic.
+      // Let's modify the flow: Ask first "Start Scan & Clean?" -> Results.
+      
+      // Since the logic is safe (checks future bookings), we can trust it.
+      // But user experience is better if we confirm "Are you sure you want to clean inactive students?"
+      setCleanStep('CONFIRM');
+  };
+
+  const handleExecuteCleanup = async () => {
+      setCleanStep('PROCESSING');
+      try {
+          const result = await cleanupInactiveStudents();
+          setDeletedCount(result.count);
+          setCleanStep('SUCCESS');
+      } catch (e) {
+          console.error(e);
+          alert("清理失敗，請稍後再試");
+          setCleanStep('IDLE');
+      }
+  };
+
   return (
     <div className="fixed inset-0 z-[90] bg-black/50 backdrop-blur-sm overflow-y-auto">
       <div className="flex min-h-full items-center justify-center p-4">
@@ -299,11 +332,12 @@ export const DataExportModal: React.FC<Props> = ({ onClose }) => {
                 <div className="border-t border-gray-200 my-4"></div>
 
                 {/* Maintenance Section (Multi-step) */}
-                <div className="space-y-3">
+                <div className="space-y-4">
                     <p className="text-xs font-bold text-red-400 uppercase tracking-wider ml-1 flex items-center gap-1">
                         <AlertTriangle size={12} /> 資料庫維護
                     </p>
                     
+                    {/* PRUNE SECTION */}
                     {pruneStep === 'IDLE' && (
                         <div className="bg-red-50 border border-red-100 p-4 rounded-xl transition-all">
                             <div className="flex items-center justify-between mb-2">
@@ -385,6 +419,80 @@ export const DataExportModal: React.FC<Props> = ({ onClose }) => {
                             </button>
                         </div>
                     )}
+
+                    {/* CLEANUP INACTIVE STUDENTS SECTION */}
+                    {cleanStep === 'IDLE' && (
+                        <div className="bg-orange-50 border border-orange-100 p-4 rounded-xl transition-all">
+                            <div className="flex items-center justify-between mb-2">
+                                <h3 className="font-bold text-orange-800 text-sm">清除閒置學生帳號</h3>
+                            </div>
+                            <p className="text-xs text-orange-700/80 mb-3 leading-relaxed">
+                                掃描並刪除同時符合以下條件的學生：
+                                <br/>1. 剩餘點數為 0
+                                <br/>2. 無有效會籍 (或已過期)
+                                <br/>3. <b>且未來沒有任何預約</b> (安全機制)
+                            </p>
+                            <button 
+                                onClick={handleStartCleanup}
+                                className="w-full bg-white border border-orange-200 text-orange-600 py-2 rounded-lg text-xs font-bold hover:bg-orange-600 hover:text-white transition-colors flex items-center justify-center gap-2 shadow-sm"
+                            >
+                                <UserMinus size={14} />
+                                掃描並清除
+                            </button>
+                        </div>
+                    )}
+
+                    {cleanStep === 'CONFIRM' && (
+                        <div className="bg-orange-100 border border-orange-200 p-4 rounded-xl animate-in zoom-in-95">
+                            <h3 className="font-bold text-orange-800 text-sm mb-2 flex items-center gap-2">
+                                <AlertTriangle size={16} /> 確定執行嗎？
+                            </h3>
+                            <p className="text-xs text-orange-800 mb-4 leading-relaxed">
+                                系統將自動刪除符合「無點數、無會籍、無未來預約」的學生資料。
+                                <br/>此操作無法復原。
+                            </p>
+                            <div className="flex gap-2">
+                                <button 
+                                    onClick={() => setCleanStep('IDLE')}
+                                    className="flex-1 bg-white border border-orange-200 text-gray-600 py-2 rounded-lg text-xs font-bold hover:bg-gray-50"
+                                >
+                                    取消
+                                </button>
+                                <button 
+                                    onClick={handleExecuteCleanup}
+                                    className="flex-1 bg-orange-600 text-white py-2 rounded-lg text-xs font-bold hover:bg-orange-700 shadow-md"
+                                >
+                                    確認執行
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {cleanStep === 'PROCESSING' && (
+                        <div className="bg-orange-50 border border-orange-100 p-6 rounded-xl flex flex-col items-center justify-center text-orange-600 animate-pulse">
+                            <Loader2 size={24} className="animate-spin mb-2" />
+                            <span className="text-sm font-bold">正在掃描與刪除...</span>
+                        </div>
+                    )}
+
+                    {cleanStep === 'SUCCESS' && (
+                        <div className="bg-green-50 border border-green-200 p-4 rounded-xl animate-in slide-in-from-bottom-2">
+                            <div className="flex items-center gap-2 mb-2 text-green-800 font-bold text-sm">
+                                <CheckCircle size={16} />
+                                清除完成！
+                            </div>
+                            <p className="text-xs text-green-700 mb-3">
+                                共刪除了 <b>{deletedCount}</b> 位閒置學生資料。
+                            </p>
+                            <button 
+                                onClick={() => setCleanStep('IDLE')}
+                                className="w-full bg-white border border-green-200 text-green-700 py-2 rounded-lg text-xs font-bold hover:bg-green-100"
+                            >
+                                完成
+                            </button>
+                        </div>
+                    )}
+
                 </div>
 
             </div>

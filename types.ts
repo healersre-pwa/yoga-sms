@@ -115,6 +115,9 @@ export interface AppContextType extends AppState {
   fetchArchivedClasses: () => Promise<void>;
   pruneArchivedClasses: (monthsToKeep: number) => Promise<{ deletedDocs: number; cleanedRecords: number }>;
   
+  // New cleanup method
+  cleanupInactiveStudents: () => Promise<{ count: number }>;
+
   notifyAdminPayment: (lastFiveDigits: string) => Promise<boolean>;
 
   isLoading: boolean;
