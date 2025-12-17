@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { X, Download, FileSpreadsheet, Users, UserCog, Calendar, FileText, Database, Table, Loader2, Trash2, AlertTriangle, CheckCircle, UserMinus } from 'lucide-react';
+import { X, Download, FileSpreadsheet, Users, UserCog, Calendar, FileText, Database, Table, Loader2, Trash2, AlertTriangle, CheckCircle, UserMinus, FileKey } from 'lucide-react';
 
 interface Props {
   onClose: () => void;
@@ -12,7 +12,7 @@ type PruneStep = 'IDLE' | 'CONFIRM' | 'PRUNING' | 'SUCCESS';
 type CleanStep = 'IDLE' | 'CONFIRM' | 'PROCESSING' | 'SUCCESS';
 
 export const DataExportModal: React.FC<Props> = ({ onClose }) => {
-  const { students, instructors, classes, fetchArchivedClasses, allClassesHistory, pruneArchivedClasses, cleanupInactiveStudents } = useApp();
+  const { students, instructors, classes, fetchArchivedClasses, allClassesHistory, pruneArchivedClasses, cleanupInactiveStudents, formatDateKey } = useApp();
   const [isPreparing, setIsPreparing] = useState(false);
   
   // Prune State
@@ -219,15 +219,6 @@ export const DataExportModal: React.FC<Props> = ({ onClose }) => {
 
   // --- Cleanup Handlers ---
   const handleStartCleanup = async () => {
-      // Just check the potential logic first? Or run the real check?
-      // Since context function does the check, we just invoke it and it will return count but DELETE
-      // Wait, we need a "Check" mode first? No, the context function executes immediately.
-      // So we need to ask permission FIRST based on "theory".
-      // But we can't know the count without running the logic.
-      // Let's modify the flow: Ask first "Start Scan & Clean?" -> Results.
-      
-      // Since the logic is safe (checks future bookings), we can trust it.
-      // But user experience is better if we confirm "Are you sure you want to clean inactive students?"
       setCleanStep('CONFIRM');
   };
 
@@ -242,6 +233,51 @@ export const DataExportModal: React.FC<Props> = ({ onClose }) => {
           alert("清理失敗，請稍後再試");
           setCleanStep('IDLE');
       }
+  };
+
+  // --- Auth Deletion List Export ---
+  const handleExportAuthDeletionList = () => {
+      // Logic mirrors cleanupInactiveStudents but returns CSV instead of deleting
+      const todayStr = formatDateKey(new Date());
+      const studentsWithFutureBookings = new Set<string>();
+
+      // 1. Identify students with future bookings
+      classes.forEach(c => {
+          if (c.bookings) {
+              Object.entries(c.bookings).forEach(([dateKey, userIds]) => {
+                  if (dateKey >= todayStr) {
+                      (userIds as string[]).forEach(id => studentsWithFutureBookings.add(id));
+                  }
+              });
+          }
+      });
+
+      // 2. Identify Targets
+      const targets = students.filter(u => {
+          if (u.role !== 'STUDENT') return false;
+          if (studentsWithFutureBookings.has(u.id)) return false;
+          if ((u.credits || 0) > 0) return false;
+          const isUnlimited = u.membershipType === 'UNLIMITED';
+          const isUnlValid = isUnlimited && (u.unlimitedExpiry && u.unlimitedExpiry >= todayStr);
+          if (isUnlValid) return false;
+          return true;
+      });
+
+      if (targets.length === 0) {
+          alert("目前沒有符合「閒置條件」的學生帳號。");
+          return;
+      }
+
+      // 3. Export
+      const headers = ['User UID', 'Email', 'Name', 'Reason'];
+      const rows = targets.map(u => [
+          u.id, // This is the Auth UID
+          u.email || 'No Email',
+          u.name,
+          'Inactive (No credits/bookings)'
+      ]);
+
+      downloadCSV('Auth_Users_To_Delete', headers, rows);
   };
 
   return (
@@ -422,22 +458,29 @@ export const DataExportModal: React.FC<Props> = ({ onClose }) => {
 
                     {/* CLEANUP INACTIVE STUDENTS SECTION */}
                     {cleanStep === 'IDLE' && (
-                        <div className="bg-orange-50 border border-orange-100 p-4 rounded-xl transition-all">
-                            <div className="flex items-center justify-between mb-2">
+                        <div className="bg-orange-50 border border-orange-100 p-4 rounded-xl transition-all space-y-3">
+                            <div className="flex items-center justify-between mb-1">
                                 <h3 className="font-bold text-orange-800 text-sm">清除閒置學生帳號</h3>
                             </div>
-                            <p className="text-xs text-orange-700/80 mb-3 leading-relaxed">
-                                掃描並刪除同時符合以下條件的學生：
-                                <br/>1. 剩餘點數為 0
-                                <br/>2. 無有效會籍 (或已過期)
-                                <br/>3. <b>且未來沒有任何預約</b> (安全機制)
+                            <p className="text-xs text-orange-700/80 leading-relaxed">
+                                掃描條件：1.無點數 2.無會籍(或過期) 3.無未來約課
                             </p>
+                            
                             <button 
                                 onClick={handleStartCleanup}
                                 className="w-full bg-white border border-orange-200 text-orange-600 py-2 rounded-lg text-xs font-bold hover:bg-orange-600 hover:text-white transition-colors flex items-center justify-center gap-2 shadow-sm"
                             >
                                 <UserMinus size={14} />
-                                掃描並清除
+                                掃描並清除 DB 資料
+                            </button>
+
+                            <button 
+                                onClick={handleExportAuthDeletionList}
+                                className="w-full bg-orange-100 border border-orange-300 text-orange-800 py-2 rounded-lg text-xs font-bold hover:bg-orange-200 transition-colors flex items-center justify-center gap-2 shadow-sm"
+                                title="因權限限制，無法直接刪除 Auth 帳號，請匯出此清單手動處理"
+                            >
+                                <FileKey size={14} />
+                                匯出 Auth UID 刪除清單 (CSV)
                             </button>
                         </div>
                     )}
