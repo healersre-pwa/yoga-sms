@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { X, LogIn, User, Lock, AlertCircle, CheckCircle, Download, UserPlus, Phone, Mail, Chrome } from 'lucide-react';
+import { X, LogIn, User, Lock, AlertCircle, CheckCircle, Download, UserPlus, Phone, Mail, Chrome, Globe } from 'lucide-react';
 
 interface Props {
   isOpen: boolean;
@@ -38,6 +38,9 @@ export const LoginModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const [googlePhone, setGooglePhone] = useState('');
 
   const [showInstallBtn, setShowInstallBtn] = useState(false);
+
+  // Detect LINE In-App Browser
+  const isLineBrowser = /Line\//i.test(navigator.userAgent);
 
   useEffect(() => {
     if (isOpen) {
@@ -183,6 +186,19 @@ export const LoginModal: React.FC<Props> = ({ isOpen, onClose }) => {
       </button>
   );
 
+  // Fallback Message for LINE users
+  const LineBrowserWarning = () => (
+      <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-center">
+          <div className="flex items-center justify-center gap-2 text-gray-500 text-xs mb-1">
+              <Globe size={14} />
+              <span>Google 登入不支援 LINE 瀏覽器</span>
+          </div>
+          <p className="text-xs text-gray-400">
+              請使用 Email 登入，或點擊右上角選單<br/>切換至 Chrome/Safari 開啟以使用 Google 帳號
+          </p>
+      </div>
+  );
+
   // Render Content based on Mode
   const renderContent = () => {
       // 1. PHONE COLLECTION STEP FOR GOOGLE
@@ -309,7 +325,11 @@ export const LoginModal: React.FC<Props> = ({ isOpen, onClose }) => {
                         </div>
                     </div>
 
-                    <GoogleBtn text="使用 Google 登入" />
+                    {isLineBrowser ? (
+                        <LineBrowserWarning />
+                    ) : (
+                        <GoogleBtn text="使用 Google 登入" />
+                    )}
 
                     <div className="mt-6 text-center space-y-3">
                         {showInstallBtn && (
@@ -331,7 +351,13 @@ export const LoginModal: React.FC<Props> = ({ isOpen, onClose }) => {
                         <p className="text-xs text-gray-500">填寫基本資料以開始使用</p>
                     </div>
 
-                    <GoogleBtn text="使用 Google 快速註冊" />
+                    {isLineBrowser ? (
+                        <div className="mb-4">
+                            <LineBrowserWarning />
+                        </div>
+                    ) : (
+                        <GoogleBtn text="使用 Google 快速註冊" />
+                    )}
 
                     <div className="relative my-4">
                         <div className="absolute inset-0 flex items-center">
