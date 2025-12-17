@@ -82,6 +82,10 @@ export interface AppContextType extends AppState {
   registerStudent: (userData: Partial<User>) => Promise<{ success: boolean; message?: string }>;
   adminCreateStudent: (email: string, tempPass: string, userData: Partial<User>) => Promise<{ success: boolean; message?: string }>;
 
+  // New Google Auth Methods
+  loginWithGoogle: () => Promise<{ status: 'SUCCESS' | 'NEEDS_PHONE' | 'ERROR'; message?: string }>;
+  registerGoogleUser: (phoneNumber: string) => Promise<{ success: boolean; message?: string }>;
+
   bookClass: (classId: string, userId?: string, targetDate?: Date) => Promise<{ success: boolean; message?: string }>;
   cancelClass: (classId: string, userId?: string, targetDate?: Date) => Promise<void>;
   

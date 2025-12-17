@@ -1,10 +1,11 @@
 
 import React, { createContext, useContext, useState, useEffect, PropsWithChildren, useCallback } from 'react';
 import { AppState, ClassSession, Instructor, User, UserRole, AppContextType } from '../types';
-import { db, auth, firebaseConfig } from '../firebaseConfig';
+import { db, auth, firebaseConfig, googleProvider } from '../firebaseConfig';
 import { 
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  signInWithPopup,
   signOut,
   onAuthStateChanged,
   sendPasswordResetEmail,
@@ -123,17 +124,15 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
                       const userData = userDoc.data() as User;
                       
                       // SECURITY FORCE: If this is the Super Admin ID, force the role to ADMIN
-                      // This ensures the UI works correctly even if DB data is weird
                       if (firebaseUser.uid === SUPER_ADMIN_ID) {
                           userData.role = UserRole.ADMIN;
                       }
 
-                      setCurrentUser({ ...userData, id: firebaseUser.uid }); // Ensure ID matches
+                      setCurrentUser({ ...userData, id: firebaseUser.uid }); 
                   } else {
-                      // Fallback: This shouldn't happen normally unless DB was wiped but Auth remains
-                      console.warn("User authenticated but no Firestore record found.");
-                      
-                      // Safety net for Admin
+                      // Doc doesn't exist yet (e.g. halfway through Google Register)
+                      // Do NOT set current user yet, let the UI handle the "Needs Phone" state
+                      // Special case: Admin backup
                       if (firebaseUser.uid === SUPER_ADMIN_ID) {
                           const adminUser: User = {
                               id: firebaseUser.uid,
@@ -145,6 +144,9 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
                               hasPaid: true
                           };
                           setCurrentUser(adminUser);
+                      } else {
+                          // Standard user with no doc -> Treat as Guest until they finish registration
+                          setCurrentUser(GUEST_USER);
                       }
                   }
               } catch (e) {
@@ -356,6 +358,64 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
         console.error("Login Error:", error.code, error.message);
         return false;
     }
+  };
+
+  // --- GOOGLE LOGIN LOGIC ---
+  const loginWithGoogle = async (): Promise<{ status: 'SUCCESS' | 'NEEDS_PHONE' | 'ERROR'; message?: string }> => {
+      try {
+          const result = await signInWithPopup(auth, googleProvider);
+          const user = result.user;
+          
+          // Check if user exists in Firestore
+          const docRef = doc(db, 'users', user.uid);
+          const docSnap = await getDoc(docRef);
+          
+          if (docSnap.exists()) {
+              // User exists, check data completeness? 
+              // Assuming if doc exists, it's valid.
+              return { status: 'SUCCESS' };
+          } else {
+              // User authenticates with Google, but no DB record.
+              // They need to provide a phone number to finish registration.
+              return { status: 'NEEDS_PHONE' };
+          }
+      } catch (error: any) {
+          console.error("Google Auth Error:", error);
+          return { status: 'ERROR', message: error.message };
+      }
+  };
+
+  // --- REGISTER GOOGLE USER (STEP 2) ---
+  const registerGoogleUser = async (phoneNumber: string): Promise<{ success: boolean; message?: string }> => {
+      const user = auth.currentUser;
+      if (!user) return { success: false, message: 'Google 驗證失效，請重試' };
+      
+      try {
+          const newUser: User = {
+              id: user.uid,
+              name: user.displayName || 'Google User',
+              email: user.email || '',
+              username: user.email?.split('@')[0] || user.uid.slice(0, 8),
+              role: UserRole.STUDENT,
+              avatarUrl: user.photoURL || '',
+              phoneNumber: phoneNumber, // Crucially added
+              membershipType: 'CREDIT',
+              credits: 0,
+              hasPaid: false,
+              mustChangePassword: false,
+              unlimitedExpiry: ''
+          };
+          
+          await setDoc(doc(db, 'users', user.uid), newUser);
+          
+          // Force update local state immediately since listener might have already fired with "no doc"
+          setCurrentUser(newUser);
+          
+          return { success: true };
+      } catch (e: any) {
+          console.error("Register Google User Error:", e);
+          return { success: false, message: e.message };
+      }
   };
 
   const logout = async () => {
@@ -912,7 +972,8 @@ Email：${currentUser.email || '-'}
       updateClassInstructor, addInstructor, updateInstructor, deleteInstructor,
       addStudent, updateStudent, updateUser, deleteStudent, resetStudentPassword, updateAppLogo, updateAppBackgroundImage,
       getNextClassDate, formatDateKey, checkInstructorConflict, isLoading, dataSource,
-      fetchArchivedClasses, pruneArchivedClasses, notifyAdminPayment, adminCreateStudent
+      fetchArchivedClasses, pruneArchivedClasses, notifyAdminPayment, adminCreateStudent,
+      loginWithGoogle, registerGoogleUser
     }}>
       {children}
     </AppContext.Provider>
