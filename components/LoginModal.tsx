@@ -371,23 +371,6 @@ export const LoginModal: React.FC<Props> = ({ isOpen, onClose }) => {
                         <p className="text-xs text-gray-500">填寫基本資料以開始使用</p>
                     </div>
 
-                    {isLineBrowser ? (
-                        <div className="mb-4">
-                            <LineBrowserWarning />
-                        </div>
-                    ) : (
-                        <GoogleBtn text="使用 Google 快速註冊" />
-                    )}
-
-                    <div className="relative my-4">
-                        <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-gray-200"></div>
-                        </div>
-                        <div className="relative flex justify-center text-sm">
-                            <span className="px-2 bg-white text-gray-500 font-medium">或使用 Email 註冊</span>
-                        </div>
-                    </div>
-
                     <div className="grid grid-cols-2 gap-3">
                         <div>
                             <label className="block text-xs font-bold text-gray-500 uppercase mb-1">姓名</label>
@@ -456,6 +439,23 @@ export const LoginModal: React.FC<Props> = ({ isOpen, onClose }) => {
                     >
                         {isProcessing ? '註冊中...' : '註冊並登入'}
                     </button>
+
+                    <div className="relative my-4">
+                        <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t border-gray-200"></div>
+                        </div>
+                        <div className="relative flex justify-center text-sm">
+                            <span className="px-2 bg-white text-gray-500 font-medium">或使用 Google 帳號</span>
+                        </div>
+                    </div>
+
+                    {isLineBrowser ? (
+                        <div className="mb-4">
+                            <LineBrowserWarning />
+                        </div>
+                    ) : (
+                        <GoogleBtn text="使用 Google 快速註冊" />
+                    )}
                 </form>
             )}
           </>
