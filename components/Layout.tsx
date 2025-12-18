@@ -17,7 +17,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
 
-  // 監測是否已經是 standalone 模式 (已安裝)
   useEffect(() => {
     const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
     if (!isPWA) {
@@ -49,22 +48,16 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           img.onload = () => {
               const canvas = document.createElement('canvas');
               const ctx = canvas.getContext('2d');
-              const SIZE = 256; // Logo 統一尺寸
-              
+              const SIZE = 256;
               canvas.width = SIZE;
               canvas.height = SIZE;
-
-              // 自動中心裁切 (Center-Crop) 邏輯
               const minSide = Math.min(img.width, img.height);
               const sx = (img.width - minSide) / 2;
               const sy = (img.height - minSide) / 2;
-              
               if (ctx) {
                   ctx.clearRect(0, 0, SIZE, SIZE);
-                  // 將原圖中間最精華的正方形區域畫到畫布上
                   ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, SIZE, SIZE);
               }
-              
               updateAppLogo(canvas.toDataURL('image/png')).then(() => setIsUploadingLogo(false));
           };
           img.src = event.target?.result as string;
@@ -77,22 +70,13 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       <div className="fixed inset-0 h-full z-0 bg-no-repeat bg-cover bg-top" style={{ backgroundImage: appBackgroundImage ? `url('${appBackgroundImage}')` : undefined }} />
       <div className="relative z-10 flex flex-col h-[100dvh] overflow-hidden">
         
-        {/* 安裝 App 提示條 */}
         {showInstallPrompt && (
           <div className="shrink-0 bg-zen-800 text-white px-4 py-2 flex items-center justify-between text-xs animate-in slide-in-from-top duration-500 z-50">
              <div className="flex items-center gap-2">
                 <Smartphone size={14} className="text-zen-300" />
                 <span className="font-medium">安裝 ZenFlow App 到手機桌面，預約更快速！</span>
              </div>
-             <button 
-                onClick={() => {
-                  alert("請點選瀏覽器選單中的「加入主畫面」或「安裝應用程式」");
-                  setShowInstallPrompt(false);
-                }}
-                className="bg-white text-zen-800 px-3 py-1 rounded-full font-bold shadow-sm active:scale-95"
-             >
-                如何安裝？
-             </button>
+             <button onClick={() => { alert("請點選瀏覽器選單中的「加入主畫面」或「安裝應用程式」"); setShowInstallPrompt(false); }} className="bg-white text-zen-800 px-3 py-1 rounded-full font-bold shadow-sm active:scale-95">如何安裝？</button>
           </div>
         )}
 
@@ -100,10 +84,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between h-16">
                 <div className="flex items-center gap-2">
-                <div 
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xl shadow-md overflow-hidden relative group transition-all ${currentUser.role === UserRole.ADMIN ? 'cursor-pointer hover:ring-2 hover:ring-zen-300' : ''} ${appLogo ? 'bg-white/80' : 'bg-zen-600 text-white shadow-zen-200'}`}
-                    onClick={() => currentUser.role === UserRole.ADMIN && logoInputRef.current?.click()}
-                >
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xl shadow-md overflow-hidden relative group transition-all ${currentUser.role === UserRole.ADMIN ? 'cursor-pointer hover:ring-2 hover:ring-zen-300' : ''} ${appLogo ? 'bg-white/80' : 'bg-zen-600 text-white shadow-zen-200'}`} onClick={() => currentUser.role === UserRole.ADMIN && logoInputRef.current?.click()}>
                     {isUploadingLogo && <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20"><Loader2 size={16} className="text-white animate-spin"/></div>}
                     {appLogo ? <img src={appLogo} alt="Logo" className="w-full h-full object-cover" /> : "Z"}
                     {currentUser.role === UserRole.ADMIN && <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"><Camera size={16} className="text-white"/></div>}
@@ -119,7 +100,13 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                             <div className="text-[10px] text-gray-600 font-semibold uppercase tracking-wider">{currentUser.role === UserRole.GUEST ? '訪客' : (currentUser.role === UserRole.ADMIN ? '管理員' : '學生')}</div>
                         </div>
                         <div className="relative">
-                            {currentUser.avatarUrl ? <img src={currentUser.avatarUrl} className={`w-9 h-9 rounded-full border-2 ${currentUser.role === UserRole.ADMIN ? 'border-zen-600' : 'border-white/80'} shadow-sm object-cover`} alt="avatar" /> : <div className={`w-9 h-9 rounded-full border-2 ${currentUser.role === UserRole.ADMIN ? 'border-zen-600' : 'border-white/80'} shadow-sm bg-white/50 text-gray-500 flex items-center justify-center`}>{currentUser.role === UserRole.ADMIN ? <UserCog size={16} /> : <UserIcon size={16} />}</div>}
+                            <div className={`w-9 h-9 rounded-full overflow-hidden shadow-sm flex items-center justify-center bg-white/50 ring-1 ring-black/5`}>
+                                {currentUser.avatarUrl ? (
+                                    <img src={currentUser.avatarUrl} className="w-full h-full object-cover" alt="avatar" />
+                                ) : (
+                                    <div className="text-gray-500">{currentUser.role === UserRole.ADMIN ? <UserCog size={16} /> : <UserIcon size={16} />}</div>
+                                )}
+                            </div>
                             <div className="absolute bottom-0 right-0 bg-white rounded-full p-0.5 shadow-sm border border-gray-100"><ChevronDown size={10} className="text-gray-500" /></div>
                         </div>
                     </button>
