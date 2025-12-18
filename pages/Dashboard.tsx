@@ -251,12 +251,10 @@ export const Dashboard: React.FC = () => {
   return (
     <div className="space-y-4 pb-32">
       <header className="mb-4">
-        {/* Responsive Header Layout: 
-            - Use lg:flex-row to allow tablets (1024px+) to see single row.
-        */}
+        {/* Responsive Header Layout */}
         <div className="flex flex-col lg:flex-row lg:items-center gap-4">
           
-          {/* 1. Left: Title + View Toggle (Merged) */}
+          {/* 1. Left: Title + View Toggle */}
           <div className="w-full lg:w-auto lg:flex-1 min-w-0">
             <div className="bg-white/40 backdrop-blur-md p-3 pl-4 rounded-xl shadow-sm border border-white/40 w-full flex justify-between items-center gap-3">
                 <div className="min-w-0 flex-1 overflow-hidden">
@@ -270,7 +268,6 @@ export const Dashboard: React.FC = () => {
                             </span>
                         )}
                     </h1>
-                    {/* Description: Visible on ALL screens, single line, scrollable if overflow */}
                     <p className="text-gray-700 mt-1 flex items-center gap-2 text-sm font-medium whitespace-nowrap overflow-x-auto hide-scrollbar pr-2">
                         <Calendar size={16} className="text-zen-700 shrink-0"/>
                         <span>
@@ -281,18 +278,26 @@ export const Dashboard: React.FC = () => {
                     </p>
                 </div>
 
-                {/* View Toggles - Always visible */}
-                <div className="bg-white/60 p-1 rounded-lg border border-white/50 flex shrink-0 shadow-sm self-start sm:self-center">
+                {/* View Toggles - Improved visual with transparent selection and noticeable frame */}
+                <div className="bg-white/60 backdrop-blur-sm p-1 rounded-xl border border-gray-200 flex shrink-0 shadow-sm self-start sm:self-center">
                     <button 
                         onClick={() => setViewMode('normal')}
-                        className={`p-2 rounded-md transition-all ${viewMode === 'normal' ? 'bg-zen-100/80 text-zen-800 shadow-sm' : 'text-gray-600 hover:text-gray-800 hover:bg-white/40'}`}
+                        className={`p-2 rounded-lg transition-all duration-200 flex items-center justify-center ${
+                            viewMode === 'normal' 
+                            ? 'bg-zen-500/15 text-zen-700 border border-zen-500/40 shadow-inner' 
+                            : 'text-gray-400 border border-transparent hover:text-gray-600 hover:bg-white/50'
+                        }`}
                         title="標準檢視"
                     >
                         <LayoutGrid size={18} />
                     </button>
                     <button 
                         onClick={() => setViewMode('compact')}
-                        className={`p-2 rounded-md transition-all ${viewMode === 'compact' ? 'bg-zen-100/80 text-zen-800 shadow-sm' : 'text-gray-600 hover:text-gray-800 hover:bg-white/40'}`}
+                        className={`p-2 rounded-lg transition-all duration-200 flex items-center justify-center ml-0.5 ${
+                            viewMode === 'compact' 
+                            ? 'bg-zen-500/15 text-zen-700 border border-zen-500/40 shadow-inner' 
+                            : 'text-gray-400 border border-transparent hover:text-gray-600 hover:bg-white/50'
+                        }`}
                         title="精簡檢視"
                     >
                         <List size={18} />
@@ -302,7 +307,6 @@ export const Dashboard: React.FC = () => {
           </div>
           
           {/* 2. Center: Date Navigation */}
-          {/* Use w-auto and shrink-0 to allow it to take natural width without forcing 1/3 */}
           <div className="w-full lg:w-auto flex justify-center shrink-0">
             <div className="flex items-center bg-white/40 backdrop-blur-md p-1 rounded-xl border border-white/40 shadow-sm w-full lg:w-auto max-w-md justify-between lg:justify-center">
                 <button onClick={() => changeWeek(-1)} className="p-3 hover:bg-white/50 rounded-lg text-gray-700 shrink-0">
@@ -321,12 +325,10 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* 3. Right: Action Buttons (Toggle removed from here) */}
-          {/* Explicit flex-row and hide-scrollbar for smooth mobile scrolling */}
+          {/* 3. Right: Action Buttons */}
           <div className="w-full lg:w-auto lg:flex-1 flex flex-row items-center gap-2 overflow-x-auto hide-scrollbar">
              
              {currentUser.role === UserRole.ADMIN && (
-                // Added lg:ml-auto to push buttons to right when space permits
                 <div className="flex gap-2 shrink-0 lg:ml-auto">
                     <button 
                         onClick={() => handleCreateClass()} 
@@ -385,17 +387,13 @@ export const Dashboard: React.FC = () => {
         </div>
       </header>
 
-      {/* 
-          INFINITE DATE SCROLLER 
-          - Reverted to 'relative' (not sticky)
-      */}
+      {/* INFINITE DATE SCROLLER */}
       <div 
         ref={daysContainerRef}
         className={`relative flex overflow-x-auto pb-2 px-0 mb-2 snap-x snap-mandatory hide-scrollbar transition-opacity duration-300 ${isReady ? 'opacity-100' : 'opacity-0'}`}
       >
           {dateList.map((date) => {
               const dateKey = formatDateKey(date);
-              
               const dateCheck = new Date(date);
               dateCheck.setHours(0,0,0,0);
               
@@ -445,10 +443,6 @@ export const Dashboard: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-4 items-start">
-        {/* 
-            DAY COLUMN CONTAINER
-            - Restored the card style container with inner sticky header
-        */}
         <div id={`day-column-${targetDateStr}`} className={`flex flex-col min-h-[100px] rounded-2xl border shadow-sm relative transition-colors ${isSelectedToday ? 'bg-zen-50/80 border-zen-200 backdrop-blur-sm' : 'bg-gray-50/70 border-gray-100 backdrop-blur-sm'}`}>
             <div className={`p-3 border-b flex flex-col items-center justify-center sticky top-0 z-10 rounded-t-2xl shadow-sm h-16 ${isSelectedToday ? 'bg-zen-100/90 border-zen-200' : 'bg-white/90 border-gray-100'}`}>
                 <span className={`font-black text-lg ${isSelectedToday ? 'text-zen-800' : 'text-gray-800'}`}>{selectedDayName}</span>
@@ -472,9 +466,7 @@ export const Dashboard: React.FC = () => {
                     visibleClasses.map(session => {
                         const subId = session.substitutions?.[targetDateStr];
                         const isSubForThisDate = !!subId;
-                        
                         const displayInstId = isSubForThisDate ? subId : session.instructorId;
-                        
                         const instructor = instructors.find(i => i.id === displayInstId) || {
                             id: 'unknown',
                             name: 'Unknown',
