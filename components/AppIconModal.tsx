@@ -17,7 +17,6 @@ export const AppIconModal: React.FC<Props> = ({ onClose }) => {
       const file = e.target.files?.[0];
       if (!file) return;
 
-      // 限制 5MB 以內
       if (file.size > 5 * 1024 * 1024) {
           alert("圖片檔案過大，請選擇 5MB 以下的圖片。");
           return;
@@ -30,7 +29,6 @@ export const AppIconModal: React.FC<Props> = ({ onClose }) => {
       reader.onload = (event) => {
           const img = new Image();
           img.onload = () => {
-              // 準備生成 192x192 和 512x512 兩種尺寸
               const sizes = [192, 512];
               const results: string[] = [];
 
@@ -40,21 +38,19 @@ export const AppIconModal: React.FC<Props> = ({ onClose }) => {
                   canvas.width = size;
                   canvas.height = size;
                   
-                  // 自動正方形裁切邏輯 (取中間)
+                  // 自動正方形裁切 (取中間滿版)
                   const minSide = Math.min(img.width, img.height);
                   const sx = (img.width - minSide) / 2;
                   const sy = (img.height - minSide) / 2;
                   
                   if (ctx) {
-                      // 填寫背景色（避免透明圖層在某些設備顯示異常）
-                      ctx.fillStyle = "#FFFFFF";
-                      ctx.fillRect(0, 0, size, size);
+                      // 移除 ctx.fillRect("#FFFFFF")，不強制加白底，保留原圖顏色或透明度
+                      ctx.clearRect(0, 0, size, size);
                       ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, size, size);
                   }
                   results.push(canvas.toDataURL('image/png'));
               });
 
-              // 呼叫 Context 更新資料庫
               updateAppIcons(results[0], results[1]).then(() => {
                   setIsUploading(false);
                   setShowSuccess(true);
@@ -105,7 +101,7 @@ export const AppIconModal: React.FC<Props> = ({ onClose }) => {
 
               <div className="space-y-4">
                   <p className="text-sm text-gray-500 leading-relaxed px-4">
-                      只需上傳一次，系統會自動為您生成所有設備所需的下載圖示規格。
+                      建議上傳「已經帶有背景色」的正方形圖片，安裝後效果最佳。
                   </p>
                   
                   <button 
@@ -132,7 +128,7 @@ export const AppIconModal: React.FC<Props> = ({ onClose }) => {
           </div>
 
           <div className="bg-gray-50 p-4 text-[10px] text-gray-400 text-center border-t border-gray-100">
-              提示：建議上傳解析度 1024x1024 以上的正方形圖片
+              提示：系統現在會完整呈現您的圖片，不再強加白邊
           </div>
       </div>
     </div>

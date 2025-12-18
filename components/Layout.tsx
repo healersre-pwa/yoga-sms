@@ -20,34 +20,26 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   useEffect(() => {
     if (!appIcon192 && !appIcon512) return;
 
-    // 1. 更新 Favicon & Apple Touch Icon (iOS)
     const icon192 = appIcon192 || "/icons/icon-192.png";
     const icon512 = appIcon512 || "/icons/icon-512.png";
 
-    // 移除現有的相關標籤以強迫重新載入
-    const selectors = [
-        "link[rel='icon']", 
-        "link[rel='apple-touch-icon']", 
-        "link[rel='shortcut icon']",
-        "link[rel='manifest']"
-    ];
-    selectors.forEach(sel => {
-        document.querySelectorAll(sel).forEach(el => el.remove());
-    });
+    // 移除舊標籤
+    const selectors = ["link[rel='icon']", "link[rel='apple-touch-icon']", "link[rel='shortcut icon']", "link[rel='manifest']"];
+    selectors.forEach(sel => document.querySelectorAll(sel).forEach(el => el.remove()));
 
-    // 重新插入 Favicon
+    // 重新插入 Favicon (192)
     const newFavicon = document.createElement('link');
     newFavicon.rel = 'icon';
     newFavicon.href = icon192;
     document.head.appendChild(newFavicon);
 
-    // 重新插入 Apple Icon (iOS)
+    // 重新插入 Apple Icon (512) - iOS 安裝用
     const newAppleIcon = document.createElement('link');
     newAppleIcon.rel = 'apple-touch-icon';
     newAppleIcon.href = icon512;
     document.head.appendChild(newAppleIcon);
 
-    // 2. 更新動態 Manifest (Android/Chrome)
+    // 2. 更新動態 Manifest - 關鍵修改：purpose 改為 any
     const manifestData = {
       "name": "ZenFlow 瑜伽訂課系統",
       "short_name": "ZenFlow",
@@ -60,13 +52,13 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           "src": icon192,
           "sizes": "192x192",
           "type": "image/png",
-          "purpose": "maskable any"
+          "purpose": "any" 
         },
         {
           "src": icon512,
           "sizes": "512x512",
           "type": "image/png",
-          "purpose": "maskable any"
+          "purpose": "any"
         }
       ]
     };
@@ -80,7 +72,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     newManifestLink.href = manifestURL;
     document.head.appendChild(newManifestLink);
 
-    // 3. 更新 OG Image (社群縮圖)
     const ogImage = document.querySelector("meta[property='og:image']");
     if (ogImage) ogImage.setAttribute("content", icon512);
 
@@ -112,6 +103,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               const ctx = canvas.getContext('2d');
               const MAX_SIZE = 200;
               let { width, height } = img;
+              // Fix: Replaced undefined MAX_HEIGHT with MAX_SIZE
               if (width > height) { if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; } } 
               else { if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; } }
               canvas.width = width; canvas.height = height;
