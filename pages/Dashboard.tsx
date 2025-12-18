@@ -198,12 +198,14 @@ export const Dashboard: React.FC = () => {
           </div>
           
           <div className="w-full lg:w-auto flex justify-center shrink-0">
-            <div className="flex items-center bg-white/40 backdrop-blur-md p-1 rounded-xl border border-white/40 shadow-sm w-full lg:w-auto justify-between lg:justify-center">
-                <button onClick={() => changeWeek(-1)} className="p-3 hover:bg-white/50 rounded-lg text-gray-700"><ChevronLeft size={20} /></button>
-                <div className="px-2 font-bold text-base text-gray-800 text-center font-mono tracking-tight">{getWeekRangeLabel()}</div>
-                <button onClick={() => changeWeek(1)} className="p-3 hover:bg-white/50 rounded-lg text-gray-700"><ChevronRight size={20} /></button>
-                <div className="w-px h-6 bg-gray-400/30 mx-1"></div>
-                <button onClick={resetToToday} className="p-3 hover:bg-white/50 rounded-lg text-gray-700"><RotateCcw size={18} /></button>
+            <div className="flex items-center bg-white/40 backdrop-blur-md p-1 rounded-xl border border-white/40 shadow-sm w-full lg:w-auto justify-between lg:justify-center overflow-hidden">
+                <button onClick={() => changeWeek(-1)} className="p-2 sm:p-3 hover:bg-white/50 rounded-lg text-gray-700 flex-shrink-0 transition-all active:scale-90"><ChevronLeft size={20} /></button>
+                <div className="px-1 sm:px-2 font-bold text-[13px] sm:text-base text-gray-800 text-center font-mono tracking-tighter sm:tracking-tight whitespace-nowrap overflow-hidden">
+                    {getWeekRangeLabel()}
+                </div>
+                <button onClick={() => changeWeek(1)} className="p-2 sm:p-3 hover:bg-white/50 rounded-lg text-gray-700 flex-shrink-0 transition-all active:scale-90"><ChevronRight size={20} /></button>
+                <div className="w-px h-6 bg-gray-400/30 mx-0.5 sm:mx-1 shrink-0"></div>
+                <button onClick={resetToToday} className="p-2 sm:p-3 hover:bg-white/50 rounded-lg text-gray-700 flex-shrink-0 transition-all active:scale-90"><RotateCcw size={18} /></button>
             </div>
           </div>
 
