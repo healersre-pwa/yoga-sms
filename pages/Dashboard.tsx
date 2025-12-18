@@ -8,7 +8,8 @@ import { StudentDirectoryModal } from '../components/StudentDirectoryModal';
 import { ClassEditorModal } from '../components/ClassEditorModal';
 import { InstructorDirectoryModal } from '../components/InstructorDirectoryModal';
 import { DataExportModal } from '../components/DataExportModal';
-import { Users, PlusCircle, Calendar, LayoutGrid, List, WifiOff, ChevronLeft, ChevronRight, RotateCcw, Plus, UserCog, Download, History, Loader2, Image as ImageIcon } from 'lucide-react';
+import { AppIconModal } from '../components/AppIconModal';
+import { Users, PlusCircle, Calendar, LayoutGrid, List, WifiOff, ChevronLeft, ChevronRight, RotateCcw, Plus, UserCog, Download, History, Loader2, Image as ImageIcon, Smartphone } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
   const { classes, instructors, currentUser, bookClass, cancelClass, dataSource, formatDateKey, allClassesHistory, fetchArchivedClasses, updateAppBackgroundImage } = useApp();
@@ -23,6 +24,7 @@ export const Dashboard: React.FC = () => {
   const [showStudentDirectory, setShowStudentDirectory] = useState(false);
   const [showInstructorDirectory, setShowInstructorDirectory] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showAppIconModal, setShowAppIconModal] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isUploadingBg, setIsUploadingBg] = useState(false);
   
@@ -364,6 +366,14 @@ export const Dashboard: React.FC = () => {
                     </button>
 
                     <button 
+                        onClick={() => setShowAppIconModal(true)}
+                        className="flex items-center justify-center gap-2 bg-white/60 backdrop-blur-md border border-white/50 shadow-sm text-gray-700 px-4 py-3 rounded-xl font-bold hover:bg-white hover:border-white transition-all text-sm whitespace-nowrap"
+                        title="更換 App 下載圖示"
+                    >
+                        <Smartphone size={20} className="text-zen-700" />
+                    </button>
+
+                    <button 
                         onClick={() => bgInputRef.current?.click()}
                         disabled={isUploadingBg}
                         className="flex items-center justify-center gap-2 bg-white/60 backdrop-blur-md border border-white/50 shadow-sm text-gray-700 px-4 py-3 rounded-xl font-bold hover:bg-white hover:border-white transition-all text-sm whitespace-nowrap"
@@ -524,6 +534,10 @@ export const Dashboard: React.FC = () => {
 
       {showExportModal && (
         <DataExportModal onClose={() => setShowExportModal(false)} />
+      )}
+
+      {showAppIconModal && (
+        <AppIconModal onClose={() => setShowAppIconModal(false)} />
       )}
     </div>
   );
