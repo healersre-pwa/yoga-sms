@@ -340,7 +340,8 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
   };
   
   const notifyAdminPayment = async (lastFiveDigits: string): Promise<boolean> => {
-      const text = `💰 匯款通知\n學生：${currentUser.name}\n末五碼：${lastFiveDigits}`;
+      // 在訊息中加入學生的唯一 ID (Uid)
+      const text = `💰 *匯款通知*\n\n*學生：* ${currentUser.name}\n*ID：* \`${currentUser.id}\`\n*末五碼：* ${lastFiveDigits}`;
       try {
           const res = await fetch(`https://api.telegram.org/bot8388670225:AAGCEsH6-abLCLoDxaITFBHINkbsk5TciAU/sendMessage`, {
               method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -438,7 +439,7 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
       return id;
   };
   const updateInstructor = (id: string, u: any) => updateDoc(doc(db, 'instructors', id), u);
-  const deleteInstructor = (id: string) => deleteDoc(doc(db, 'instructors', id));
+  const borderInstructor = (id: string) => deleteDoc(doc(db, 'instructors', id));
   const addStudent = (d: any) => {
       const id = generateSequentialId('student', allUsers.map(u => u.id));
       setDoc(doc(db, 'users', id), { id, role: UserRole.STUDENT, avatarUrl: d.avatarUrl || '', hasPaid: false, membershipType: d.membershipType || 'CREDIT', credits: d.credits || 0, unlimitedExpiry: d.unlimitedExpiry || '', username: d.username || `user${Date.now()}`, name: d.name || '新學生', phoneNumber: d.phoneNumber || '', email: d.email || '' });
@@ -470,7 +471,7 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
       currentUser, classes: activeClasses, allClassesHistory, instructors, students, appLogo, appBackgroundImage, appIcon192, appIcon512,
       login, logout, validateUser: () => null, setLoginModalOpen, registerStudent,
       bookClass, cancelClass, addClass, updateClass, deleteClass, deleteClassWithRefund: async () => {},
-      updateClassInstructor, addInstructor, updateInstructor, deleteInstructor,
+      updateClassInstructor, addInstructor, updateInstructor, deleteInstructor: borderInstructor,
       addStudent, updateStudent, updateUser, deleteStudent, resetStudentPassword, updateAppLogo, updateAppBackgroundImage, updateAppIcons,
       getNextClassDate, formatDateKey, checkInstructorConflict, isLoading, dataSource,
       fetchArchivedClasses, pruneArchivedClasses, cleanupInactiveStudents, notifyAdminPayment, adminCreateStudent,
