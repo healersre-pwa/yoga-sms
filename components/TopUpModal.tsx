@@ -21,13 +21,14 @@ export const TopUpModal: React.FC<Props> = ({ onClose }) => {
   };
 
   const handleNotify = async () => {
-      if (lastFiveDigits.length !== 5) {
-          alert("請輸入正確的帳號末五碼");
+      // 只有在有輸入的情況下才檢查長度是否為 5
+      if (lastFiveDigits.length > 0 && lastFiveDigits.length !== 5) {
+          alert("若要提供末五碼，請輸入完整的 5 位數字");
           return;
       }
 
       setIsSending(true);
-      const success = await notifyAdminPayment(lastFiveDigits);
+      const success = await notifyAdminPayment(lastFiveDigits || "未提供");
       setIsSending(false);
       
       if (success) {
@@ -144,7 +145,7 @@ export const TopUpModal: React.FC<Props> = ({ onClose }) => {
                     <div className="space-y-3">
                         <div>
                             <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
-                                您的帳號末五碼
+                                您的帳號末五碼（選填）
                             </label>
                             <input 
                                 type="text"
@@ -158,7 +159,7 @@ export const TopUpModal: React.FC<Props> = ({ onClose }) => {
 
                         <button 
                             onClick={handleNotify}
-                            disabled={isSending || lastFiveDigits.length !== 5}
+                            disabled={isSending}
                             className="w-full bg-zen-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-zen-200 hover:bg-zen-700 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                         >
                             {isSending ? (

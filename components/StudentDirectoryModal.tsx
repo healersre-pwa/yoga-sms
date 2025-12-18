@@ -34,7 +34,6 @@ export const StudentDirectoryModal: React.FC<Props> = ({ onClose }) => {
     );
   });
 
-  // FIX: Define isEditing to check if a student is being edited or created
   const isEditing = !!selectedStudentId || isCreating;
 
   const handleSelectStudent = (student: User) => {
