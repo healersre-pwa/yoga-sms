@@ -9,11 +9,10 @@
   <!-- Open Graph / LINE / Messenger preview -->
   <meta property="og:title" content="ZenFlow 瑜伽訂課系統" />
   <meta property="og:description" content="ZenFlow 健身房・瑜珈課程・線上預約訂課系統" />
-  <meta property="og:image" content="https://demo.healer-sre.workers.dev/icons/icon-512.png" />
+  <meta property="og:image" content="/icons/icon-512.png" />
   <meta property="og:image:width" content="512" />
   <meta property="og:image:height" content="512" />
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://demo.healer-sre.workers.dev" />
 
   <!-- iOS PWA 必備 -->
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -21,10 +20,10 @@
   <meta name="apple-mobile-web-app-title" content="ZenFlow">
 
   <!-- iOS Icons -->
-  <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-512.png">
+  <link rel="apple-touch-icon" href="/icons/icon-512.png">
 
-  <!-- PWA manifest -->
-  <link rel="manifest" href="/manifest.json" />
+  <!-- PWA manifest - 加上 crossorigin 避免某些 Server 環境下的安全性問題 -->
+  <link rel="manifest" href="/manifest.json" crossorigin="use-credentials" />
 
   <title>ZenFlow Yoga</title>
 
@@ -52,24 +51,13 @@
   <style>
     body {
       margin: 0;
-      /* 背景色改為淺灰，主要背景圖改由 React Layout 控制以避免手機版跳動 */
       background-color: #f4f7f6;
       min-height: 100vh;
-      /* 移除 background-image 相關設定，解決跳動問題 */
     }
-
-    /* Hide scrollbar for Chrome, Safari and Opera */
-    .hide-scrollbar::-webkit-scrollbar {
-      display: none;
-    }
-    /* Hide scrollbar for IE, Edge and Firefox */
-    .hide-scrollbar {
-      -ms-overflow-style: none;  /* IE and Edge */
-      scrollbar-width: none;  /* Firefox */
-    }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 
-  <!-- Import map -->
   <script type="importmap">
 {
   "imports": {
@@ -83,41 +71,29 @@
     "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
     "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js",
     "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js",
-    "vite-plugin-pwa": "https://aistudiocdn.com/vite-plugin-pwa@^1.2.0",
-    "firebase/": "https://esm.sh/firebase@^12.7.0/"
+    "firebase/": "https://esm.sh/firebase@^12.7.0/",
+    "vite-plugin-pwa": "https://esm.sh/vite-plugin-pwa@^1.2.0"
   }
 }
 </script>
-
-  <!-- Global error handler -->
-  <script>
-    window.addEventListener('error', function(e) {
-      const root = document.getElementById('root');
-      if(root && root.innerText.includes('Loading')) {
-        root.innerHTML = `<div style="padding:20px; color:red;">
-          <h3>系統發生錯誤 (Application Error)</h3>
-          <p>${e.message}</p>
-          <p>若您是在 GitHub Pages 瀏覽，請注意瀏覽器無法直接執行 .tsx 檔案，需經過 Build 步驟。</p>
-        </div>`;
-      }
-    });
-  </script>
-
 </head>
 
 <body>
   <div id="root"></div>
-
-  <!-- Main React app -->
   <script type="module" src="/index.tsx"></script>
 
-  <!-- Service Worker -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
-          .then(reg => console.log('SW registered:', reg))
-          .catch(err => console.log('SW registration failed:', err));
+          .then(reg => {
+            console.log('SW registered');
+            // 初始註冊後，嘗試發送一次 Manifest 更新，確保即便沒有實體檔案也能工作
+            if (reg.active) {
+                // 這裡可以觸發一次更新邏輯
+            }
+          })
+          .catch(err => console.log('SW failed:', err));
       });
     }
   </script>

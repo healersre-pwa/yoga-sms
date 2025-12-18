@@ -21,14 +21,14 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   useEffect(() => {
     const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
     if (!isPWA) {
-      // 如果未安裝且是訪客或學生，顯示安裝提示
       const timer = setTimeout(() => setShowInstallPrompt(true), 3000);
       return () => clearTimeout(timer);
     }
   }, []);
 
-  // --- 動態同步 Manifest 給 Service Worker ---
+  // --- 同步 Manifest 給 Service Worker ---
   useEffect(() => {
+    // 即使還沒載入自訂圖示，也先準備好預設結構
     const icon192 = appIcon192 || "/icons/icon-192.png";
     const icon512 = appIcon512 || "/icons/icon-512.png";
 
@@ -45,15 +45,22 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       ]
     };
 
-    // 發送給 Service Worker 更新
-    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-      navigator.serviceWorker.controller.postMessage({
-        type: 'UPDATE_MANIFEST',
-        manifest: manifestData
-      });
-    }
+    const updateSW = () => {
+      if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'UPDATE_MANIFEST',
+          manifest: manifestData
+        });
+      }
+    };
 
-    // 更新 DOM 標籤 (iOS 尤其重要)
+    // 1. 立刻嘗試更新
+    updateSW();
+    
+    // 2. 確保 SW 狀態改變時也要更新
+    navigator.serviceWorker.addEventListener('controllerchange', updateSW);
+
+    // 3. 更新 iOS 專用的 Link 標籤
     const selectors = ["link[rel='apple-touch-icon']", "link[rel='icon']"];
     selectors.forEach(sel => document.querySelectorAll(sel).forEach(el => el.remove()));
 
@@ -67,6 +74,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     favicon.href = icon192;
     document.head.appendChild(favicon);
 
+    return () => navigator.serviceWorker.removeEventListener('controllerchange', updateSW);
   }, [appIcon192, appIcon512]);
 
   useEffect(() => {
@@ -110,7 +118,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       <div className="fixed inset-0 h-full z-0 bg-no-repeat bg-cover bg-top" style={{ backgroundImage: appBackgroundImage ? `url('${appBackgroundImage}')` : undefined }} />
       <div className="relative z-10 flex flex-col h-[100dvh] overflow-hidden">
         
-        {/* 安裝 App 提示條 (僅限非安裝狀態) */}
+        {/* 安裝 App 提示條 */}
         {showInstallPrompt && (
           <div className="shrink-0 bg-zen-800 text-white px-4 py-2 flex items-center justify-between text-xs animate-in slide-in-from-top duration-500 z-50">
              <div className="flex items-center gap-2">
@@ -160,7 +168,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                         <div className="absolute right-0 top-full mt-2 w-48 bg-white/90 backdrop-blur-xl rounded-xl shadow-xl border border-white/50 py-1 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 z-50">
                             <div className="px-4 py-3 border-b border-gray-100 sm:hidden"><p className="text-sm font-bold text-gray-900">{currentUser.name}</p><p className="text-xs text-gray-500">{currentUser.role}</p></div>
                             {currentUser.role === UserRole.GUEST ? (
-                                <button onClick={handleLoginClick} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-zen-50 hover:text-zen-600 flex items-center gap-2 font-medium"><LogIn size={16} />登入帳號</button>
+                                <button handleLoginClick={handleLoginClick} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-zen-50 hover:text-zen-600 flex items-center gap-2 font-medium"><LogIn size={16} />登入帳號</button>
                             ) : (
                                 <>
                                     <div className="px-4 py-2 text-xs text-gray-400 font-semibold uppercase tracking-wider">帳號管理</div>
