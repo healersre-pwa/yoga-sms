@@ -48,7 +48,7 @@ export const StudentDirectoryModal: React.FC<Props> = ({ onClose }) => {
     }) : [];
 
   const now = new Date();
-  const upcomingBookings = allBookings.filter(b => b.fullDate >= now).sort((a, b) => a.fullDate.getTime() - b.fullDate.getTime());
+  const upcomingBookings = allBookings.filter(b => b.fullDate >= now).sort((a, b) => b.fullDate.getTime() - a.fullDate.getTime());
   const historyBookings = allBookings.filter(b => b.fullDate < now).sort((a, b) => b.fullDate.getTime() - a.fullDate.getTime());
 
   const handleSelectStudent = (student: User) => {
@@ -137,27 +137,43 @@ export const StudentDirectoryModal: React.FC<Props> = ({ onClose }) => {
                              <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><Camera size={24} className="text-white" /></div>
                          </div>
                          <input type="file" ref={fileInputRef} hidden accept="image/*" onChange={handleImageUpload} />
-                         <div><h1 className="text-2xl font-bold text-gray-800">{formData.name || (isCreating ? '新學生' : '未命名')}</h1><p className="text-gray-500">{isCreating ? '建立新帳號' : `ID: ${selectedStudentId}`}</p></div>
+                         <div className="min-w-0 flex-1">
+                             <h1 className="text-2xl font-bold text-gray-800 truncate">{formData.name || (isCreating ? '新學生' : '未命名')}</h1>
+                             <div className="mt-1">
+                                <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">ID:</p>
+                                <p className="text-[13px] text-gray-500 font-mono break-all leading-tight">{selectedStudentId || '系統自動產生'}</p>
+                             </div>
+                         </div>
                     </div>
                     <div className="space-y-8 max-w-lg mx-auto sm:mx-0">
-                        <div className="p-6 bg-gray-50 rounded-2xl border border-gray-200">
+                        <div className="p-4 sm:p-6 bg-gray-50 rounded-2xl border border-gray-200 overflow-hidden">
                             <h3 className="text-base font-bold text-gray-700 mb-4 flex items-center gap-2"><CreditCard size={20} />會員資格設定</h3>
-                            <div className="flex bg-white rounded-xl p-1.5 border border-gray-200 mb-6">
-                                <button onClick={() => setFormData({...formData, membershipType: 'CREDIT'})} className={`flex-1 py-3 text-sm font-bold rounded-lg ${formData.membershipType === 'CREDIT' ? 'bg-blue-100 text-blue-700' : 'text-gray-500'}`}>扣點制</button>
-                                <button onClick={() => setFormData({...formData, membershipType: 'UNLIMITED'})} className={`flex-1 py-3 text-sm font-bold rounded-lg ${formData.membershipType === 'UNLIMITED' ? 'bg-green-100 text-green-700' : 'text-gray-500'}`}>課程自由</button>
+                            <div className="flex bg-white rounded-xl p-1 border border-gray-200 mb-6">
+                                <button onClick={() => setFormData({...formData, membershipType: 'CREDIT'})} className={`flex-1 py-3 text-sm font-bold rounded-lg transition-all ${formData.membershipType === 'CREDIT' ? 'bg-blue-100 text-blue-700 shadow-sm' : 'text-gray-400'}`}>扣點制</button>
+                                <button onClick={() => setFormData({...formData, membershipType: 'UNLIMITED'})} className={`flex-1 py-3 text-sm font-bold rounded-lg transition-all ${formData.membershipType === 'UNLIMITED' ? 'bg-green-100 text-green-700 shadow-sm' : 'text-gray-400'}`}>課程自由</button>
                             </div>
                             {formData.membershipType === 'UNLIMITED' ? (
-                                <input type="date" value={formData.unlimitedExpiry || ''} onChange={(e) => setFormData({...formData, unlimitedExpiry: e.target.value})} className="w-full p-4 bg-white border border-gray-200 rounded-xl" />
+                                <input type="date" value={formData.unlimitedExpiry || ''} onChange={(e) => setFormData({...formData, unlimitedExpiry: e.target.value})} className="w-full p-4 bg-white border border-gray-300 rounded-xl font-bold text-gray-900 focus:ring-2 focus:ring-zen-500 outline-none" />
                             ) : (
-                                <div className="flex items-center gap-4"><input type="text" value={creditsInput} onChange={(e) => setCreditsInput(e.target.value)} className="flex-1 p-3 bg-white border border-gray-200 rounded-xl text-center font-bold text-2xl" /></div>
+                                <div className="w-full">
+                                    <input 
+                                        type="number" 
+                                        inputMode="decimal"
+                                        value={creditsInput} 
+                                        onChange={(e) => setCreditsInput(e.target.value)} 
+                                        className="w-full p-5 bg-white border-2 border-gray-300 rounded-2xl text-center font-black text-4xl text-gray-900 shadow-inner focus:border-zen-500 focus:ring-4 focus:ring-zen-500/10 outline-none transition-all box-border" 
+                                        style={{ colorScheme: 'light' }}
+                                    />
+                                    <p className="text-center text-xs text-gray-400 mt-2 font-medium">請輸入剩餘點數</p>
+                                </div>
                             )}
                         </div>
                         <div className="space-y-4">
-                            <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full p-4 border rounded-xl" placeholder="姓名" />
-                            <input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full p-4 border rounded-xl" placeholder="Email" />
-                            <input type="tel" value={formData.phoneNumber} onChange={e => setFormData({...formData, phoneNumber: e.target.value})} className="w-full p-4 border rounded-xl" placeholder="電話" />
+                            <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-zen-500 outline-none text-gray-900 font-medium" placeholder="姓名" />
+                            <input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-zen-500 outline-none text-gray-900 font-medium" placeholder="Email" />
+                            <input type="tel" value={formData.phoneNumber} onChange={e => setFormData({...formData, phoneNumber: e.target.value})} className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-zen-500 outline-none text-gray-900 font-medium" placeholder="電話" />
                         </div>
-                        <div className="pt-6 flex justify-end pb-10"><button onClick={handleSave} className="bg-zen-600 text-white px-8 py-4 rounded-xl font-bold shadow-lg">儲存變更</button></div>
+                        <div className="pt-6 flex justify-end pb-10"><button onClick={handleSave} className="w-full sm:w-auto bg-zen-600 text-white px-10 py-4 rounded-xl font-bold shadow-lg shadow-zen-200 active:scale-95 transition-all">儲存變更</button></div>
                     </div>
                 </div>
             ) : ( <div className="flex-1 flex flex-col items-center justify-center text-gray-300 p-8 text-center"><UserIcon size={80} className="mb-6 text-gray-200" /><p className="text-xl font-medium text-gray-400">請選擇學生以檢視詳情</p></div> )}
