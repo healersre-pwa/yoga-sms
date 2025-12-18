@@ -20,14 +20,34 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   useEffect(() => {
     if (!appIcon192 && !appIcon512) return;
 
-    // 1. 更新 Favicon & Apple Touch Icon
-    const favicon = document.querySelector("link[rel='icon']");
-    if (favicon) favicon.setAttribute("href", appIcon192 || "/icons/icon-192.png");
-    
-    const appleIcon = document.querySelector("link[rel='apple-touch-icon']");
-    if (appleIcon) appleIcon.setAttribute("href", appIcon512 || "/icons/icon-512.png");
+    // 1. 更新 Favicon & Apple Touch Icon (iOS)
+    const icon192 = appIcon192 || "/icons/icon-192.png";
+    const icon512 = appIcon512 || "/icons/icon-512.png";
 
-    // 2. 更新動態 Manifest
+    // 移除現有的相關標籤以強迫重新載入
+    const selectors = [
+        "link[rel='icon']", 
+        "link[rel='apple-touch-icon']", 
+        "link[rel='shortcut icon']",
+        "link[rel='manifest']"
+    ];
+    selectors.forEach(sel => {
+        document.querySelectorAll(sel).forEach(el => el.remove());
+    });
+
+    // 重新插入 Favicon
+    const newFavicon = document.createElement('link');
+    newFavicon.rel = 'icon';
+    newFavicon.href = icon192;
+    document.head.appendChild(newFavicon);
+
+    // 重新插入 Apple Icon (iOS)
+    const newAppleIcon = document.createElement('link');
+    newAppleIcon.rel = 'apple-touch-icon';
+    newAppleIcon.href = icon512;
+    document.head.appendChild(newAppleIcon);
+
+    // 2. 更新動態 Manifest (Android/Chrome)
     const manifestData = {
       "name": "ZenFlow 瑜伽訂課系統",
       "short_name": "ZenFlow",
@@ -37,26 +57,32 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       "theme_color": "#568479",
       "icons": [
         {
-          "src": appIcon192 || "/icons/icon-192.png",
+          "src": icon192,
           "sizes": "192x192",
-          "type": "image/png"
+          "type": "image/png",
+          "purpose": "maskable any"
         },
         {
-          "src": appIcon512 || "/icons/icon-512.png",
+          "src": icon512,
           "sizes": "512x512",
-          "type": "image/png"
+          "type": "image/png",
+          "purpose": "maskable any"
         }
       ]
     };
 
     const stringManifest = JSON.stringify(manifestData);
-    const blob = new Blob([stringManifest], {type: 'application/json'});
+    const blob = new Blob([stringManifest], {type: 'application/manifest+json'});
     const manifestURL = URL.createObjectURL(blob);
     
-    const manifestTag = document.querySelector("link[rel='manifest']");
-    if (manifestTag) {
-        manifestTag.setAttribute("href", manifestURL);
-    }
+    const newManifestLink = document.createElement('link');
+    newManifestLink.rel = 'manifest';
+    newManifestLink.href = manifestURL;
+    document.head.appendChild(newManifestLink);
+
+    // 3. 更新 OG Image (社群縮圖)
+    const ogImage = document.querySelector("meta[property='og:image']");
+    if (ogImage) ogImage.setAttribute("content", icon512);
 
     return () => URL.revokeObjectURL(manifestURL);
   }, [appIcon192, appIcon512]);

@@ -1,8 +1,8 @@
-const CACHE_NAME = 'zenflow-v7';
+
+const CACHE_NAME = 'zenflow-v8';
 const urlsToCache = [
   '/',
   '/index.html',
-  '/manifest.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png'
 ];
@@ -38,6 +38,11 @@ self.addEventListener('fetch', (event) => {
 
   // Only handle http/https requests
   if (!requestUrl.protocol.startsWith('http')) return;
+  
+  // 讓 manifest 請求直接走網路，不要走快取
+  if (requestUrl.pathname.endsWith('manifest.json')) {
+      return;
+  }
 
   event.respondWith(
     caches.match(event.request)
@@ -59,7 +64,6 @@ self.addEventListener('fetch', (event) => {
           return response;
         }).catch(() => {
           // Optional: fallback for offline
-          // return caches.match('/offline.html');
         });
       })
   );
