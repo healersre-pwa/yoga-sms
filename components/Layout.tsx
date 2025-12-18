@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { UserRole } from '../types';
-import { LogOut, LogIn, ChevronDown, CalendarDays, UserCircle, Camera, Loader2, User as UserIcon, UserCog, CreditCard } from 'lucide-react';
+import { LogOut, LogIn, ChevronDown, CalendarDays, UserCircle, Camera, Loader2, User as UserIcon, UserCog, CreditCard, Smartphone, Download } from 'lucide-react';
 import { LoginModal } from './LoginModal';
 import { StudentProfileModal } from './StudentProfileModal';
 import { TopUpModal } from './TopUpModal';
@@ -12,34 +12,26 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false); 
   const [isTopUpOpen, setIsTopUpOpen] = useState(false);
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
 
-  // --- 動態更新 Manifest 與 Icons ---
+  // 監測是否已經是 standalone 模式 (已安裝)
   useEffect(() => {
-    if (!appIcon192 && !appIcon512) return;
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+    if (!isPWA) {
+      // 如果未安裝且是訪客或學生，顯示安裝提示
+      const timer = setTimeout(() => setShowInstallPrompt(true), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
+  // --- 動態同步 Manifest 給 Service Worker ---
+  useEffect(() => {
     const icon192 = appIcon192 || "/icons/icon-192.png";
     const icon512 = appIcon512 || "/icons/icon-512.png";
 
-    // 移除舊標籤
-    const selectors = ["link[rel='icon']", "link[rel='apple-touch-icon']", "link[rel='shortcut icon']", "link[rel='manifest']"];
-    selectors.forEach(sel => document.querySelectorAll(sel).forEach(el => el.remove()));
-
-    // 重新插入 Favicon (192)
-    const newFavicon = document.createElement('link');
-    newFavicon.rel = 'icon';
-    newFavicon.href = icon192;
-    document.head.appendChild(newFavicon);
-
-    // 重新插入 Apple Icon (512) - iOS 安裝用
-    const newAppleIcon = document.createElement('link');
-    newAppleIcon.rel = 'apple-touch-icon';
-    newAppleIcon.href = icon512;
-    document.head.appendChild(newAppleIcon);
-
-    // 2. 更新動態 Manifest - 關鍵修改：purpose 改為 any
     const manifestData = {
       "name": "ZenFlow 瑜伽訂課系統",
       "short_name": "ZenFlow",
@@ -48,34 +40,33 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       "background_color": "#f4f7f6",
       "theme_color": "#568479",
       "icons": [
-        {
-          "src": icon192,
-          "sizes": "192x192",
-          "type": "image/png",
-          "purpose": "any" 
-        },
-        {
-          "src": icon512,
-          "sizes": "512x512",
-          "type": "image/png",
-          "purpose": "any"
-        }
+        { "src": icon192, "sizes": "192x192", "type": "image/png", "purpose": "any" },
+        { "src": icon512, "sizes": "512x512", "type": "image/png", "purpose": "any" }
       ]
     };
 
-    const stringManifest = JSON.stringify(manifestData);
-    const blob = new Blob([stringManifest], {type: 'application/manifest+json'});
-    const manifestURL = URL.createObjectURL(blob);
-    
-    const newManifestLink = document.createElement('link');
-    newManifestLink.rel = 'manifest';
-    newManifestLink.href = manifestURL;
-    document.head.appendChild(newManifestLink);
+    // 發送給 Service Worker 更新
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'UPDATE_MANIFEST',
+        manifest: manifestData
+      });
+    }
 
-    const ogImage = document.querySelector("meta[property='og:image']");
-    if (ogImage) ogImage.setAttribute("content", icon512);
+    // 更新 DOM 標籤 (iOS 尤其重要)
+    const selectors = ["link[rel='apple-touch-icon']", "link[rel='icon']"];
+    selectors.forEach(sel => document.querySelectorAll(sel).forEach(el => el.remove()));
 
-    return () => URL.revokeObjectURL(manifestURL);
+    const appleIcon = document.createElement('link');
+    appleIcon.rel = 'apple-touch-icon';
+    appleIcon.href = icon512;
+    document.head.appendChild(appleIcon);
+
+    const favicon = document.createElement('link');
+    favicon.rel = 'icon';
+    favicon.href = icon192;
+    document.head.appendChild(favicon);
+
   }, [appIcon192, appIcon512]);
 
   useEffect(() => {
@@ -103,7 +94,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               const ctx = canvas.getContext('2d');
               const MAX_SIZE = 200;
               let { width, height } = img;
-              // Fix: Replaced undefined MAX_HEIGHT with MAX_SIZE
               if (width > height) { if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; } } 
               else { if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; } }
               canvas.width = width; canvas.height = height;
@@ -119,6 +109,26 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     <div className="relative bg-gray-50">
       <div className="fixed inset-0 h-full z-0 bg-no-repeat bg-cover bg-top" style={{ backgroundImage: appBackgroundImage ? `url('${appBackgroundImage}')` : undefined }} />
       <div className="relative z-10 flex flex-col h-[100dvh] overflow-hidden">
+        
+        {/* 安裝 App 提示條 (僅限非安裝狀態) */}
+        {showInstallPrompt && (
+          <div className="shrink-0 bg-zen-800 text-white px-4 py-2 flex items-center justify-between text-xs animate-in slide-in-from-top duration-500 z-50">
+             <div className="flex items-center gap-2">
+                <Smartphone size={14} className="text-zen-300" />
+                <span className="font-medium">安裝 ZenFlow App 到手機桌面，預約更快速！</span>
+             </div>
+             <button 
+                onClick={() => {
+                  alert("請點選瀏覽器選單中的「加入主畫面」或「安裝應用程式」");
+                  setShowInstallPrompt(false);
+                }}
+                className="bg-white text-zen-800 px-3 py-1 rounded-full font-bold shadow-sm active:scale-95"
+             >
+                如何安裝？
+             </button>
+          </div>
+        )}
+
         <nav className="shrink-0 bg-white/50 backdrop-blur-md border-b border-white/30 shadow-sm z-40">
             <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between h-16">

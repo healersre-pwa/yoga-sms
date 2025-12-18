@@ -88,7 +88,8 @@ export const DataExportModal: React.FC<Props> = ({ onClose }) => {
     allClassesHistory.forEach(cls => {
         if (!cls.bookings) return;
         Object.entries(cls.bookings).forEach(([date, studentIds]) => {
-            studentIds.forEach(sid => {
+            // FIX: Explicitly cast studentIds to string[] to resolve TypeScript 'unknown' error on line 91
+            (studentIds as string[]).forEach(sid => {
                 const s = students.find(u => u.id === sid);
                 if (s) rows.push([date, cls.startTimeStr, cls.title, instructors.find(i => i.id === cls.instructorId)?.name || '未知', s.name]);
             });
