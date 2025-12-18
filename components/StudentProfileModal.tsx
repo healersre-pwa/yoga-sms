@@ -28,7 +28,6 @@ export const StudentProfileModal: React.FC<Props> = ({ onClose }) => {
   const expiry = liveStudentData.unlimitedExpiry;
 
   // Flatten Bookings: Find all specific dates this user has booked
-  // Create an array of objects: { id, title, startTime, location, dateObject }
   const allBookings = classes.flatMap(cls => {
       if (!cls.bookings) return [];
       const bookings = cls.bookings as Record<string, string[]>;
@@ -51,7 +50,6 @@ export const StudentProfileModal: React.FC<Props> = ({ onClose }) => {
       return bookedDates;
   });
 
-  // Split into Upcoming and History
   const now = new Date();
   
   const upcomingBookings = allBookings.filter(b => {
@@ -66,7 +64,7 @@ export const StudentProfileModal: React.FC<Props> = ({ onClose }) => {
       const classStart = new Date(b.dateObj);
       classStart.setHours(h, m, 0, 0);
       return classStart < now;
-  }).sort((a, b) => b.dateObj.getTime() - a.dateObj.getTime()); // Reverse sort for history
+  }).sort((a, b) => b.dateObj.getTime() - a.dateObj.getTime());
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -84,34 +82,28 @@ export const StudentProfileModal: React.FC<Props> = ({ onClose }) => {
         img.onload = () => {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
-            const MAX_WIDTH = 500;
-            const MAX_HEIGHT = 500;
-            let width = img.width;
-            let height = img.height;
-
-            if (width > height) {
-                if (width > MAX_WIDTH) {
-                    height *= MAX_WIDTH / width;
-                    width = MAX_WIDTH;
-                }
-            } else {
-                if (height > MAX_HEIGHT) {
-                    width *= MAX_HEIGHT / height;
-                    height = MAX_HEIGHT;
-                }
-            }
-
-            canvas.width = width;
-            canvas.height = height;
-            ctx?.drawImage(img, 0, 0, width, height);
+            const SIZE = 500; // 頭像統一尺寸
             
-            // Convert to Base64
+            canvas.width = SIZE;
+            canvas.height = SIZE;
+
+            // 中心裁切邏輯
+            const minSide = Math.min(img.width, img.height);
+            const sx = (img.width - minSide) / 2;
+            const sy = (img.height - minSide) / 2;
+
+            if (ctx) {
+                ctx.clearRect(0, 0, SIZE, SIZE);
+                ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, SIZE, SIZE);
+            }
+            
             const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
             
             updateUser(currentUser.id, { avatarUrl: dataUrl })
                 .then(() => setIsUploading(false))
-                .catch(() => {
-                    alert("上傳失敗");
+                .catch((err) => {
+                    console.error("Update avatar error:", err);
+                    alert("更新失敗");
                     setIsUploading(false);
                 });
         };
@@ -140,7 +132,6 @@ export const StudentProfileModal: React.FC<Props> = ({ onClose }) => {
             </button>
             
             <div className="flex items-center gap-4">
-                {/* Avatar with Upload */}
                 <div className="relative group shrink-0">
                     <div className="w-20 h-20 rounded-full border-4 border-white/30 shadow-lg overflow-hidden bg-white relative flex items-center justify-center">
                         {isUploading ? (
@@ -159,7 +150,6 @@ export const StudentProfileModal: React.FC<Props> = ({ onClose }) => {
                     <button 
                         onClick={() => fileInputRef.current?.click()}
                         className="absolute bottom-0 right-0 bg-white text-zen-600 p-1.5 rounded-full shadow-md hover:bg-gray-100 transition-colors z-20"
-                        title="更換照片"
                     >
                         <Camera size={14} />
                     </button>
@@ -237,11 +227,8 @@ export const StudentProfileModal: React.FC<Props> = ({ onClose }) => {
             </div>
         </div>
 
-        {/* Content */}
         <div className="p-0 overflow-y-auto flex-1 bg-gray-50">
-            
             {isAdmin ? (
-                // --- ADMIN VIEW: Salary Calculator & Quick Links ---
                 <div className="p-6">
                     <h3 className="text-gray-800 font-bold mb-4 flex items-center gap-2">
                         <UserCog className="text-zen-600" size={20} />
@@ -270,10 +257,7 @@ export const StudentProfileModal: React.FC<Props> = ({ onClose }) => {
                     </div>
                 </div>
             ) : (
-                // --- STUDENT VIEW: My Classes ---
                 <div className="p-6 space-y-8">
-                    
-                    {/* UPCOMING SECTION */}
                     <div>
                         <h3 className="text-gray-800 font-bold mb-4 flex items-center gap-2">
                             <Calendar className="text-zen-600" size={20} />
@@ -291,7 +275,6 @@ export const StudentProfileModal: React.FC<Props> = ({ onClose }) => {
                             <div className="space-y-3">
                                 {upcomingBookings.map((booking, idx) => {
                                     const dayName = ['週日','週一','週二','週三','週四','週五','週六'][booking.dayOfWeek === 7 ? 0 : booking.dayOfWeek];
-                                    
                                     return (
                                         <div key={`${booking.id}-${booking.dateKey}-${idx}`} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:border-zen-300 transition-colors">
                                             <div className="flex justify-between items-start">
@@ -309,11 +292,9 @@ export const StudentProfileModal: React.FC<Props> = ({ onClose }) => {
                                                         <MapPin size={12}/> {booking.location}
                                                     </p>
                                                 </div>
-                                                
                                                 <button 
                                                     onClick={() => cancelClass(booking.id, undefined, booking.dateObj)}
                                                     className="text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors"
-                                                    title="取消預約"
                                                 >
                                                     <Trash2 size={18} />
                                                 </button>
@@ -325,18 +306,15 @@ export const StudentProfileModal: React.FC<Props> = ({ onClose }) => {
                         )}
                     </div>
 
-                    {/* HISTORY SECTION (IF ANY) */}
                     {historyBookings.length > 0 && (
                         <div>
                             <h3 className="text-gray-500 font-bold mb-4 flex items-center gap-2 text-sm uppercase tracking-wider">
                                 <History className="text-gray-400" size={18} />
                                 歷史紀錄
                             </h3>
-                            
                             <div className="space-y-2 opacity-80">
                                 {historyBookings.map((booking, idx) => {
                                     const dayName = ['週日','週一','週二','週三','週四','週五','週六'][booking.dayOfWeek === 7 ? 0 : booking.dayOfWeek];
-                                    
                                     return (
                                         <div key={`hist-${booking.id}-${booking.dateKey}-${idx}`} className="bg-gray-50 p-3 rounded-lg border border-gray-200 flex justify-between items-center">
                                             <div>
@@ -359,13 +337,10 @@ export const StudentProfileModal: React.FC<Props> = ({ onClose }) => {
                             </div>
                         </div>
                     )}
-
                 </div>
             )}
         </div>
       </div>
-
-      {/* Nested Modal for Salary */}
       {showSalaryCalc && <SalaryCalculatorModal onClose={() => setShowSalaryCalc(false)} />}
     </div>
   );

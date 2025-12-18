@@ -445,7 +445,14 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
       return id;
   };
   const updateStudent = async (id: string, u: any) => updateDoc(doc(db, 'users', id), u);
-  const updateUser = async (id: string, u: any) => updateDoc(doc(db, 'users', id), u);
+  
+  const updateUser = async (id: string, u: any) => {
+      await updateDoc(doc(db, 'users', id), u);
+      if (id === currentUser.id) {
+          setCurrentUser(prev => ({ ...prev, ...u }));
+      }
+  };
+
   const updateAppLogo = async (url: string) => { setAppLogo(url); localStorage.setItem(KEYS.LOCAL_LOGO, url); await setDoc(doc(db, 'settings', 'global'), { logoUrl: url }, { merge: true }); };
   const updateAppBackgroundImage = async (url: string) => { setAppBackgroundImage(url); localStorage.setItem(KEYS.LOCAL_BG, url); await setDoc(doc(db, 'settings', 'global'), { backgroundImageUrl: url }, { merge: true }); };
   
@@ -461,13 +468,13 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
   return (
     <AppContext.Provider value={{
       currentUser, classes: activeClasses, allClassesHistory, instructors, students, appLogo, appBackgroundImage, appIcon192, appIcon512,
-      login, logout, validateUser: () => null, isLoginModalOpen, setLoginModalOpen, registerStudent,
+      login, logout, validateUser: () => null, setLoginModalOpen, registerStudent,
       bookClass, cancelClass, addClass, updateClass, deleteClass, deleteClassWithRefund: async () => {},
       updateClassInstructor, addInstructor, updateInstructor, deleteInstructor,
       addStudent, updateStudent, updateUser, deleteStudent, resetStudentPassword, updateAppLogo, updateAppBackgroundImage, updateAppIcons,
       getNextClassDate, formatDateKey, checkInstructorConflict, isLoading, dataSource,
       fetchArchivedClasses, pruneArchivedClasses, cleanupInactiveStudents, notifyAdminPayment, adminCreateStudent,
-      loginWithGoogle, registerGoogleUser
+      loginWithGoogle, registerGoogleUser, isLoginModalOpen
     }}>
       {children}
     </AppContext.Provider>

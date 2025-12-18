@@ -49,12 +49,22 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           img.onload = () => {
               const canvas = document.createElement('canvas');
               const ctx = canvas.getContext('2d');
-              const MAX_SIZE = 200;
-              let { width, height } = img;
-              if (width > height) { if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; } } 
-              else { if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; } }
-              canvas.width = width; canvas.height = height;
-              ctx?.drawImage(img, 0, 0, width, height);
+              const SIZE = 256; // Logo 統一尺寸
+              
+              canvas.width = SIZE;
+              canvas.height = SIZE;
+
+              // 自動中心裁切 (Center-Crop) 邏輯
+              const minSide = Math.min(img.width, img.height);
+              const sx = (img.width - minSide) / 2;
+              const sy = (img.height - minSide) / 2;
+              
+              if (ctx) {
+                  ctx.clearRect(0, 0, SIZE, SIZE);
+                  // 將原圖中間最精華的正方形區域畫到畫布上
+                  ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, SIZE, SIZE);
+              }
+              
               updateAppLogo(canvas.toDataURL('image/png')).then(() => setIsUploadingLogo(false));
           };
           img.src = event.target?.result as string;
@@ -95,7 +105,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                     onClick={() => currentUser.role === UserRole.ADMIN && logoInputRef.current?.click()}
                 >
                     {isUploadingLogo && <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20"><Loader2 size={16} className="text-white animate-spin"/></div>}
-                    {appLogo ? <img src={appLogo} alt="Logo" className="w-full h-full object-contain p-1" /> : "Z"}
+                    {appLogo ? <img src={appLogo} alt="Logo" className="w-full h-full object-cover" /> : "Z"}
                     {currentUser.role === UserRole.ADMIN && <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"><Camera size={16} className="text-white"/></div>}
                     <input type="file" ref={logoInputRef} className="hidden" accept="image/*" onChange={handleLogoUpload} />
                 </div>
