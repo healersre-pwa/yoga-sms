@@ -33,9 +33,6 @@ export const LoginModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const [regConfirmPassword, setRegConfirmPassword] = useState('');
 
   const [googlePhone, setGooglePhone] = useState('');
-  const [showInstallBtn, setShowInstallBtn] = useState(false);
-
-  const isLineBrowser = /Line\//i.test(navigator.userAgent);
 
   useEffect(() => {
     if (isOpen) {
@@ -45,7 +42,6 @@ export const LoginModal: React.FC<Props> = ({ isOpen, onClose }) => {
         setError('');
         setSuccess('');
         setIsProcessing(false);
-        if (deferredPrompt) setShowInstallBtn(true);
     }
   }, [isOpen]);
 
@@ -162,8 +158,19 @@ export const LoginModal: React.FC<Props> = ({ isOpen, onClose }) => {
             ) : (
                 <>
                     <div className="flex border-b border-gray-200 mb-6">
-                        <button onClick={() => { setMode('LOGIN'); setError(''); }} className={`flex-1 py-3 text-center font-bold text-sm relative transition-colors ${mode === 'LOGIN' ? 'text-zen-600' : 'text-gray-400 hover:text-gray-600'}`}>登入{mode === 'LOGIN' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-zen-600" />}</button>
-                        <button onClick={() => { setMode('REGISTER'); setError(''); }} className={`flex-1 py-3 text-center font-bold text-sm relative transition-colors bg-blue-50/50 ${mode === 'REGISTER' ? 'text-zen-600 bg-blue-50' : 'text-gray-400 hover:text-gray-600'}`}>註冊帳號{mode === 'REGISTER' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-zen-600" /><div className="absolute top-0 right-0 p-1"><UserPlus size={10} className="text-zen-600 opacity-50"/></div></button>
+                        <button onClick={() => { setMode('LOGIN'); setError(''); }} className={`flex-1 py-3 text-center font-bold text-sm relative transition-colors ${mode === 'LOGIN' ? 'text-zen-600' : 'text-gray-400 hover:text-gray-600'}`}>
+                            登入
+                            {mode === 'LOGIN' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-zen-600" />}
+                        </button>
+                        <button onClick={() => { setMode('REGISTER'); setError(''); }} className={`flex-1 py-3 text-center font-bold text-sm relative transition-colors bg-blue-50/50 ${mode === 'REGISTER' ? 'text-zen-600 bg-blue-50' : 'text-gray-400 hover:text-gray-600'}`}>
+                            註冊帳號
+                            {mode === 'REGISTER' && (
+                                <React.Fragment>
+                                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-zen-600" />
+                                    <div className="absolute top-0 right-0 p-1"><UserPlus size={10} className="text-zen-600 opacity-50"/></div>
+                                </React.Fragment>
+                            )}
+                        </button>
                     </div>
 
                     {error && <div className="mb-4 p-3 bg-red-50 border border-red-100 rounded-lg flex items-center gap-2 text-sm text-red-600 font-bold"><AlertCircle size={16} /> {error}</div>}
@@ -183,12 +190,8 @@ export const LoginModal: React.FC<Props> = ({ isOpen, onClose }) => {
                             </div>
                             <button type="submit" disabled={isProcessing} className="w-full bg-zen-600 text-white font-bold py-3.5 rounded-xl hover:bg-zen-700 shadow-lg shadow-zen-200 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-70">{isProcessing ? '登入中...' : '登入'}</button>
                             <div className="relative my-6"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200"></div></div><div className="relative flex justify-center text-sm"><span className="px-2 bg-white text-gray-500 font-medium">或</span></div></div>
-                            {isLineBrowser ? (
-                                <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center space-y-3"><div className="flex items-center justify-center gap-2 text-gray-500 text-xs font-bold"><Globe size={14} /><span>Google 登入不支援 LINE 瀏覽器</span></div><p className="text-xs text-gray-400 leading-relaxed">為確保帳號安全，請點擊下方按鈕，切換至預設瀏覽器以繼續。</p><button type="button" onClick={() => window.location.href = window.location.href + (window.location.href.includes('?') ? '&' : '?') + 'openExternalBrowser=1'} className="w-full bg-blue-600 text-white font-bold py-2.5 rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center justify-center gap-2 shadow-sm"><Chrome size={16} />切換至系統瀏覽器開啟</button></div>
-                            ) : (
-                                <GoogleBtn text="使用 Google 登入" />
-                            )}
-                        </button>
+                            <GoogleBtn text="使用 Google 登入" />
+                        </form>
                     ) : (
                         <form onSubmit={handleRegisterSubmit} className="space-y-4">
                             <div className="text-center mb-4"><h3 className="text-xl font-bold text-gray-800">建立新帳號</h3><p className="text-xs text-gray-500">填寫基本資料以開始使用</p></div>
@@ -203,7 +206,7 @@ export const LoginModal: React.FC<Props> = ({ isOpen, onClose }) => {
                             </div>
                             <button type="submit" disabled={isProcessing} className="w-full bg-zen-700 text-white font-bold py-3.5 rounded-xl hover:bg-zen-800 shadow-lg shadow-zen-200 transition-all mt-4 disabled:opacity-50 flex items-center justify-center gap-2">{isProcessing ? '註冊中...' : '註冊並登入'}</button>
                             <div className="relative my-4"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200"></div></div><div className="relative flex justify-center text-sm"><span className="px-2 bg-white text-gray-500 font-medium">或使用 Google 帳號</span></div></div>
-                            {isLineBrowser ? <div className="mb-4 text-center text-xs text-gray-400">LINE 內建瀏覽器暫不支援 Google 註冊</div> : <GoogleBtn text="使用 Google 快速註冊" />}
+                            <GoogleBtn text="使用 Google 快速註冊" />
                         </form>
                     )}
                 </>

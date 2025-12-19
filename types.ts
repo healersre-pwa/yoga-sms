@@ -20,7 +20,6 @@ export interface User {
   credits?: number; 
   unlimitedExpiry?: string; 
   hasPaid?: boolean; 
-  mustChangePassword?: boolean;
 }
 
 export interface Instructor {
@@ -64,8 +63,8 @@ export interface AppState {
   students: User[]; 
   appLogo: string | null; 
   appBackgroundImage: string | null;
-  appIcon192: string | null; // PWA 192x192
-  appIcon512: string | null; // PWA 512x512
+  appIcon192: string | null; 
+  appIcon512: string | null; 
 }
 
 export interface AppContextType extends AppState {
@@ -75,7 +74,7 @@ export interface AppContextType extends AppState {
   isLoginModalOpen: boolean;
   setLoginModalOpen: (isOpen: boolean) => void;
   registerStudent: (userData: Partial<User>) => Promise<{ success: boolean; message?: string }>;
-  adminCreateStudent: (email: string, tempPass: string, userData: Partial<User>) => Promise<{ success: boolean; message?: string }>;
+  adminCreateStudent: (email: string, tempPass: string, userData: Partial<User>, sendEmailNotification?: boolean) => Promise<{ success: boolean; message?: string }>;
   loginWithGoogle: () => Promise<{ status: 'SUCCESS' | 'NEEDS_PHONE' | 'ERROR'; message?: string }>;
   registerGoogleUser: (phoneNumber: string) => Promise<{ success: boolean; message?: string }>;
   bookClass: (classId: string, userId?: string, targetDate?: Date) => Promise<{ success: boolean; message?: string }>;
@@ -93,6 +92,7 @@ export interface AppContextType extends AppState {
   updateUser: (id: string, updates: Partial<User>) => Promise<void>;
   deleteStudent: (id: string) => Promise<{ success: boolean; message?: string }>;
   resetStudentPassword: (id: string) => Promise<void>; 
+  forgotPassword: (email: string) => Promise<{ success: boolean; message?: string }>;
   updateAppLogo: (base64Image: string) => Promise<void>;
   updateAppBackgroundImage: (base64Image: string) => Promise<void>;
   updateAppIcons: (icon192: string, icon512: string) => Promise<void>;

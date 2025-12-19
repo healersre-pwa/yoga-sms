@@ -24,7 +24,7 @@ export const StudentDirectoryModal: React.FC<Props> = ({ onClose }) => {
   const [creditsInput, setCreditsInput] = useState('');
   
   const [formData, setFormData] = useState<Partial<User>>({
-    name: '', username: '', email: '', password: '123123', phoneNumber: '', hasPaid: false, avatarUrl: '', membershipType: 'CREDIT', credits: 0, unlimitedExpiry: ''
+    name: '', username: '', email: '', password: 'hi123123', phoneNumber: '', hasPaid: false, avatarUrl: '', membershipType: 'CREDIT', credits: 0, unlimitedExpiry: ''
   });
 
   const filteredStudents = students.filter(s => {
@@ -74,7 +74,7 @@ export const StudentDirectoryModal: React.FC<Props> = ({ onClose }) => {
     setCreditsInput('0');
     setSendEmail(false);
     setFormData({ 
-        name: '', username: '', email: '', password: '123123', phoneNumber: '', 
+        name: '', username: '', email: '', password: 'hi123123', phoneNumber: '', 
         hasPaid: false, avatarUrl: '', membershipType: 'CREDIT', credits: 0, unlimitedExpiry: '' 
     });
   };
@@ -96,8 +96,13 @@ export const StudentDirectoryModal: React.FC<Props> = ({ onClose }) => {
         const dataToSave = { ...cleanData, credits: isNaN(finalCredits) ? 0 : finalCredits, membershipType: formData.membershipType || 'CREDIT' };
         if (isCreating) {
             if (formData.email) {
-                const result = await adminCreateStudent(formData.email, formData.password || "123123", dataToSave, sendEmail);
-                if (result.success) { alert(sendEmail ? `✅ 建立成功！已發信通知學生。` : `✅ 建立成功！預設密碼為 123123。`); handleBackToList(); }
+                // 使用設定好的預設密碼 hi123123
+                const tempPass = formData.password || "hi123123";
+                const result = await adminCreateStudent(formData.email, tempPass, dataToSave, sendEmail);
+                if (result.success) { 
+                    alert(sendEmail ? `✅ 建立成功！已發送密碼設定郵件。` : `✅ 建立成功！預設密碼為 ${tempPass}。`); 
+                    handleBackToList(); 
+                }
                 else alert(`建立失敗：${result.message}`);
             } else { 
                 const newId = await addStudent(dataToSave); 
@@ -180,20 +185,20 @@ export const StudentDirectoryModal: React.FC<Props> = ({ onClose }) => {
                     </div>
                     <div className="space-y-8 max-w-lg mx-auto sm:mx-0">
                         {isCreating && (
-                            <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 space-y-3"><h4 className="text-sm font-bold text-blue-800 flex items-center gap-2"><Mail size={16}/> 帳號建立設定</h4><p className="text-xs text-blue-600">手動建立學生帳號，預設密碼將為 <span className="font-bold underline">123123</span>。</p><label className="flex items-center gap-3 p-2 bg-white rounded-lg border border-blue-200 cursor-pointer hover:bg-blue-50 transition-colors"><input type="checkbox" checked={sendEmail} onChange={(e) => setSendEmail(e.target.checked)} className="w-5 h-5 accent-blue-600"/><span className="text-sm font-bold text-blue-700">發送密碼重設郵件通知學生</span></label></div>
+                            <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 space-y-3"><h4 className="text-sm font-bold text-blue-800 flex items-center gap-2"><Mail size={16}/> 帳號建立設定</h4><p className="text-xs text-blue-600">系統將設定初始密碼為 <span className="font-bold underline">hi123123</span>。</p><label className="flex items-center gap-3 p-2 bg-white rounded-lg border border-blue-200 cursor-pointer hover:bg-blue-50 transition-colors"><input type="checkbox" checked={sendEmail} onChange={(e) => setSendEmail(e.target.checked)} className="w-5 h-5 accent-blue-600"/><span className="text-sm font-bold text-blue-700">自動發送密碼設定信件</span></label></div>
                         )}
 
                         <div className="p-4 sm:p-6 bg-gray-50 rounded-2xl border border-gray-200 overflow-hidden"><h3 className="text-base font-bold text-gray-700 mb-4 flex items-center gap-2"><CreditCard size={20} />會員資格設定</h3><div className="flex bg-white rounded-xl p-1 border border-gray-200 mb-6"><button onClick={() => setFormData({...formData, membershipType: 'CREDIT'})} className={`flex-1 py-3 text-sm font-bold rounded-lg transition-all ${formData.membershipType === 'CREDIT' ? 'bg-blue-100 text-blue-700 shadow-sm' : 'text-gray-400'}`}>扣點制</button><button onClick={() => setFormData({...formData, membershipType: 'UNLIMITED'})} className={`flex-1 py-3 text-sm font-bold rounded-lg transition-all ${formData.membershipType === 'UNLIMITED' ? 'bg-green-100 text-green-700 shadow-sm' : 'text-gray-400'}`}>課程自由</button></div>{formData.membershipType === 'UNLIMITED' ? (<div className="w-full space-y-2"><label className="text-xs font-bold text-gray-400 uppercase">會籍到期日</label><input type="date" value={formData.unlimitedExpiry || ''} onChange={(e) => setFormData({...formData, unlimitedExpiry: e.target.value})} className="w-full p-4 bg-white border-2 border-gray-300 rounded-xl font-bold text-gray-900 focus:ring-2 focus:ring-zen-500 outline-none" /></div>) : (<div className="w-full"><input type="number" inputMode="decimal" step="any" value={creditsInput} onChange={(e) => setCreditsInput(e.target.value)} className="w-full p-5 bg-white border-2 border-gray-300 rounded-2xl text-center font-black text-4xl text-gray-900 shadow-inner focus:border-zen-500 focus:ring-4 focus:ring-zen-500/10 outline-none transition-all box-border" style={{ colorScheme: 'light' }}/><p className="text-center text-xs text-gray-400 mt-2 font-medium">請輸入剩餘點數</p></div>)}</div>
                         <div className="space-y-4"><input type="text" value={formData.name || ''} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-zen-500 outline-none text-gray-900 font-medium" placeholder="姓名" /><input type="email" value={formData.email || ''} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-zen-500 outline-none text-gray-900 font-medium" placeholder="Email (登入帳號)" /><input type="tel" value={formData.phoneNumber || ''} onChange={e => setFormData({...formData, phoneNumber: e.target.value})} className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-zen-500 outline-none text-gray-900 font-medium" placeholder="電話" /></div>
                         
                         {!isCreating && (
-                            <div className="p-4 bg-amber-50 rounded-xl border border-amber-100">
-                                <h4 className="text-sm font-bold text-amber-800 flex items-center gap-2 mb-3"><KeyRound size={16}/> 安全性與密碼</h4>
-                                <button onClick={handleSendReset} disabled={isSendingReset} className="w-full bg-white border border-amber-200 text-amber-700 py-3 rounded-xl font-bold text-sm shadow-sm hover:bg-amber-100 flex items-center justify-center gap-2">
+                            <div className="p-4 bg-amber-50 rounded-xl border border-amber-100 space-y-3">
+                                <h4 className="text-sm font-bold text-amber-800 flex items-center gap-2 mb-1"><KeyRound size={16}/> 帳號安全</h4>
+                                <button onClick={handleSendReset} disabled={isSendingReset} className="w-full bg-white border border-amber-200 text-amber-700 py-3 rounded-xl font-bold text-sm shadow-sm hover:bg-amber-100 flex items-center justify-center gap-2 transition-colors">
                                     {isSendingReset ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
                                     發送密碼重設郵件 (至學生信箱)
                                 </button>
-                                <p className="text-[10px] text-amber-600 mt-2">若學生遺忘密碼，可點此發送連結讓學生自行重設。預設為安全性最高的郵件重設流程。</p>
+                                <p className="text-[10px] text-amber-600 mt-2 leading-relaxed">學生遺忘密碼時，請點擊上方按鈕發送重設連結。請確保學生的 Email 填寫正確。</p>
                             </div>
                         )}
 
