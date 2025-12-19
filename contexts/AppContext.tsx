@@ -324,7 +324,7 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
       } catch (e: any) { return { success: false, message: e.message }; }
   };
   
-  const adminCreateStudent = async (email: string, tempPass: string, userData: Partial<User>): Promise<{ success: boolean; message?: string }> => {
+  const adminCreateStudent = async (email: string, tempPass: string, userData: Partial<User>, sendEmailNotification: boolean = true): Promise<{ success: boolean; message?: string }> => {
       let secondaryApp;
       try {
           secondaryApp = initializeApp(firebaseConfig, "SecondaryApp");
@@ -333,14 +333,37 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
           const uid = userCredential.user.uid;
           const newUser: User = { id: uid, name: userData.name || '新學生', email, username: email.split('@')[0], role: UserRole.STUDENT, avatarUrl: userData.avatarUrl || '', phoneNumber: userData.phoneNumber || '', membershipType: 'CREDIT', credits: userData.credits || 0, hasPaid: false, unlimitedExpiry: userData.unlimitedExpiry || '' };
           await setDoc(doc(db, 'users', uid), newUser);
-          await sendPasswordResetEmail(secondaryAuth, email);
+          
+          if (sendEmailNotification) {
+            await sendPasswordResetEmail(secondaryAuth, email);
+          }
           return { success: true };
       } catch (e: any) { return { success: false, message: e.message }; } 
       finally { if (secondaryApp) await deleteApp(secondaryApp); }
   };
+
+  const resetStudentPassword = async (id: string) => { 
+      const s = allUsers.find(u => u.id === id); 
+      if (s?.email) {
+          try {
+            await sendPasswordResetEmail(auth, s.email); 
+          } catch(e) {
+              console.error("Reset Email Error:", e);
+              alert("發送重設郵件時出錯，請確認 Email 是否有效。");
+          }
+      }
+  };
+
+  const forgotPassword = async (email: string): Promise<{ success: boolean; message?: string }> => {
+      try {
+          await sendPasswordResetEmail(auth, email);
+          return { success: true };
+      } catch (e: any) {
+          return { success: false, message: e.message };
+      }
+  };
   
   const notifyAdminPayment = async (lastFiveDigits: string): Promise<boolean> => {
-      // 在訊息中加入學生的唯一 ID (Uid)
       const text = `💰 *匯款通知*\n\n*學生：* ${currentUser.name}\n*ID：* \`${currentUser.id}\`\n*末五碼：* ${lastFiveDigits}`;
       try {
           const res = await fetch(`https://api.telegram.org/bot8388670225:AAGCEsH6-abLCLoDxaITFBHINkbsk5TciAU/sendMessage`, {
@@ -463,8 +486,15 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
       await setDoc(doc(db, 'settings', 'global'), { appIcon192, appIcon512 }, { merge: true });
   };
 
-  const deleteStudent = async (id: string) => { try { await deleteDoc(doc(db, 'users', id)); return { success: true, message: '已刪除學生資料庫檔案' }; } catch(e) { return { success: false }; } };
-  const resetStudentPassword = async (id: string) => { const s = allUsers.find(u => u.id === id); if (s?.email) await sendPasswordResetEmail(auth, s.email); };
+  const deleteStudent = async (id: string) => { 
+      try { 
+          await deleteDoc(doc(db, 'users', id)); 
+          return { success: true, message: '已刪除學生資料庫檔案' }; 
+      } catch(e) { 
+          console.error("Firestore Delete Student Error:", e);
+          return { success: false, message: '刪除失敗' }; 
+      } 
+  };
 
   return (
     <AppContext.Provider value={{
@@ -472,7 +502,7 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
       login, logout, validateUser: () => null, setLoginModalOpen, registerStudent,
       bookClass, cancelClass, addClass, updateClass, deleteClass, deleteClassWithRefund: async () => {},
       updateClassInstructor, addInstructor, updateInstructor, deleteInstructor: borderInstructor,
-      addStudent, updateStudent, updateUser, deleteStudent, resetStudentPassword, updateAppLogo, updateAppBackgroundImage, updateAppIcons,
+      addStudent, updateStudent, updateUser, deleteStudent, resetStudentPassword, forgotPassword, updateAppLogo, updateAppBackgroundImage, updateAppIcons,
       getNextClassDate, formatDateKey, checkInstructorConflict, isLoading, dataSource,
       fetchArchivedClasses, pruneArchivedClasses, cleanupInactiveStudents, notifyAdminPayment, adminCreateStudent,
       loginWithGoogle, registerGoogleUser, isLoginModalOpen
