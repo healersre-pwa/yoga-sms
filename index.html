@@ -22,26 +22,32 @@
   <!-- iOS Icons -->
   <link rel="apple-touch-icon" href="/icons/icon-512.png">
 
-  <!-- PWA manifest - 加上 crossorigin 避免某些 Server 環境下的安全性問題 -->
+  <!-- PWA manifest -->
   <link rel="manifest" href="/manifest.json" crossorigin="use-credentials" />
 
   <title>ZenFlow Yoga</title>
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
 
   <script>
     tailwind.config = {
       theme: {
         extend: {
-          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          fontFamily: { 
+            sans: ['Inter', 'Noto Sans TC', 'sans-serif'],
+            display: ['Inter', 'Noto Sans TC', 'sans-serif']
+          },
           colors: {
             zen: {
               50:'#f4f7f6',100:'#e3ebe8',200:'#c5d9d3',300:'#9dbfb6',
               400:'#75a095',500:'#568479',600:'#436961',700:'#38554f',
               800:'#304642',900:'#293a37'
             }
+          },
+          animation: {
+            'spin-slow': 'spin 8s linear infinite',
           }
         }
       }
@@ -51,11 +57,18 @@
   <style>
     body {
       margin: 0;
-      background-color: #f4f7f6;
+      background-color: #293a37; /* 設為深色，讓啟動載入時不閃白屏 */
       min-height: 100vh;
+      font-family: 'Inter', 'Noto Sans TC', sans-serif;
     }
     .hide-scrollbar::-webkit-scrollbar { display: none; }
     .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    /* 自定義滾動條 */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
   </style>
 
   <script type="importmap">
@@ -86,13 +99,7 @@
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
-          .then(reg => {
-            console.log('SW registered');
-            // 初始註冊後，嘗試發送一次 Manifest 更新，確保即便沒有實體檔案也能工作
-            if (reg.active) {
-                // 這裡可以觸發一次更新邏輯
-            }
-          })
+          .then(reg => console.log('SW registered'))
           .catch(err => console.log('SW failed:', err));
       });
     }

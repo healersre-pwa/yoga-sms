@@ -2,20 +2,29 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { UserRole } from '../types';
-import { LogOut, LogIn, ChevronDown, CalendarDays, UserCircle, Camera, Loader2, User as UserIcon, UserCog, CreditCard, Smartphone } from 'lucide-react';
+import { LogOut, LogIn, ChevronDown, CalendarDays, UserCircle, Camera, Loader2, User as UserIcon, UserCog, CreditCard, Smartphone, Sparkles } from 'lucide-react';
 import { LoginModal } from './LoginModal';
 import { StudentProfileModal } from './StudentProfileModal';
 import { TopUpModal } from './TopUpModal';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { currentUser, logout, isLoginModalOpen, setLoginModalOpen, appLogo, appBackgroundImage, updateAppLogo } = useApp();
+  const { currentUser, logout, isLoginModalOpen, setLoginModalOpen, appLogo, appBackgroundImage, updateAppLogo, isLoading } = useApp();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false); 
   const [isTopUpOpen, setIsTopUpOpen] = useState(false);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+  const [isSplashVisible, setIsSplashVisible] = useState(true);
   const menuRef = useRef<HTMLDivElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+
+  // 當載入完成後，稍微延遲一點再消失，讓過渡更自然
+  useEffect(() => {
+    if (!isLoading) {
+      const timer = setTimeout(() => setIsSplashVisible(false), 1800);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading]);
 
   useEffect(() => {
     const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
@@ -48,7 +57,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           img.onload = () => {
               const canvas = document.createElement('canvas');
               const ctx = canvas.getContext('2d');
-              const SIZE = 256;
+              const SIZE = 512;
               canvas.width = SIZE;
               canvas.height = SIZE;
               const minSide = Math.min(img.width, img.height);
@@ -66,10 +75,71 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   };
 
   return (
-    <div className="relative bg-gray-50">
+    <div className="relative bg-gray-50 h-[100dvh]">
+      {/* 啟動畫面 / Loading Overlay */}
+      {isSplashVisible && (
+        <div className={`fixed inset-0 z-[10000] flex flex-col items-center justify-center transition-all duration-1000 ease-in-out ${!isLoading ? 'opacity-0 backdrop-blur-0' : 'opacity-100'}`}>
+            {/* 背景圖：更溫柔的放大效果 */}
+            <div 
+                className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-[10000ms] ease-out" 
+                style={{ 
+                    backgroundImage: appBackgroundImage ? `url('${appBackgroundImage}')` : 'linear-gradient(to bottom, #568479, #38554f)',
+                    transform: isLoading ? 'scale(1.2)' : 'scale(1.05)',
+                }} 
+            />
+            {/* 更高級的暖調霧面遮罩 */}
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-[8px]" />
+            
+            {/* 中間品牌內容 */}
+            <div className="relative z-10 flex flex-col items-center animate-in fade-in duration-1000">
+                {/* Logo: 徹底解決填滿問題，移除所有邊距和背景色 */}
+                <div className="relative w-48 h-48 mb-8">
+                    {/* 極細的光環引導 */}
+                    <div className="absolute inset-0 rounded-full border border-white/20 animate-pulse" />
+                    <div className="absolute inset-[-4px] rounded-full border border-white/10 animate-spin-slow duration-[15s]" />
+                    
+                    {/* 核心 Logo 圖片：使用 object-cover 並稍微放大以消除邊界 */}
+                    <div className="absolute inset-0 rounded-full overflow-hidden shadow-[0_0_40px_rgba(255,255,255,0.15)] bg-transparent">
+                        {appLogo ? (
+                            <img 
+                                src={appLogo} 
+                                alt="Logo" 
+                                className="w-full h-full object-cover scale-[1.1]" 
+                            />
+                        ) : (
+                            <div className="flex items-center justify-center w-full h-full bg-white/10 text-white font-light text-6xl">Z</div>
+                        )}
+                    </div>
+                </div>
+
+                {/* 品牌文字：縮小並調整字間距，讓它更優雅 */}
+                <div className="text-center flex flex-col items-center">
+                    <h2 className="text-3xl font-light text-white tracking-[0.6em] mb-4 uppercase drop-shadow-md">
+                        ZenFlow
+                    </h2>
+                    <div className="flex items-center justify-center gap-3 px-6 py-2 rounded-full border border-white/10 bg-white/5 backdrop-blur-md">
+                        <Sparkles size={14} className="text-yellow-200/80 animate-pulse" />
+                        <span className="text-white/80 font-medium tracking-[0.4em] text-[10px]">找到身心的流動</span>
+                        <Sparkles size={14} className="text-yellow-200/80 animate-pulse" />
+                    </div>
+                </div>
+            </div>
+
+            {/* 底部裝飾 */}
+            <div className="absolute bottom-16 left-0 right-0 text-center z-10 opacity-40">
+                <div className="flex justify-center gap-4 mb-4">
+                    <div className="w-1 h-1 bg-white rounded-full animate-ping"></div>
+                    <div className="w-1 h-1 bg-white rounded-full animate-ping delay-300"></div>
+                </div>
+                <p className="text-white text-[9px] font-bold tracking-[0.8em] uppercase">Yoga Ecosystem</p>
+            </div>
+        </div>
+      )}
+
+      {/* 實際 App 背景 */}
       <div className="fixed inset-0 h-full z-0 bg-no-repeat bg-cover bg-top" style={{ backgroundImage: appBackgroundImage ? `url('${appBackgroundImage}')` : undefined }} />
+      
       <div className="relative z-10 flex flex-col h-[100dvh] overflow-hidden">
-        
         {showInstallPrompt && (
           <div className="shrink-0 bg-zen-800 text-white px-4 py-2 flex items-center justify-between text-xs animate-in slide-in-from-top duration-500 z-50">
              <div className="flex items-center gap-2">

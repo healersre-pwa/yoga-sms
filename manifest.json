@@ -1,10 +1,11 @@
+
 {
   "name": "ZenFlow 訂課系統",
-  "short_name": "mist約課",
+  "short_name": "ZenFlow",
   "start_url": "/index.html",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#f4f7f6",
+  "background_color": "#293a37",
   "theme_color": "#568479",
   "orientation": "portrait",
   "description": "ZenFlow 健身房・瑜珈課程・線上預約訂課系統",
