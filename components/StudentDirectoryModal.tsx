@@ -1,15 +1,15 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { User, UserRole, MembershipType } from '../types';
-import { X, Search, UserPlus, CreditCard, User as UserIcon, Save, Camera, Loader2, ChevronLeft, Check, Coins, Trash2, Mail, AlertTriangle, KeyRound } from 'lucide-react';
+import { X, Search, UserPlus, CreditCard, User as UserIcon, Save, Camera, Loader2, ChevronLeft, Check, Coins, Trash2, Mail, AlertTriangle, KeyRound, History, Calendar, ChevronDown, MapPin } from 'lucide-react';
 
 interface Props {
   onClose: () => void;
 }
 
 export const StudentDirectoryModal: React.FC<Props> = ({ onClose }) => {
-  const { students, addStudent, updateStudent, adminCreateStudent, deleteStudent, resetStudentPassword } = useApp();
+  const { students, addStudent, updateStudent, adminCreateStudent, deleteStudent, resetStudentPassword, allClassesHistory, fetchArchivedClasses, cancelClass } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -18,6 +18,11 @@ export const StudentDirectoryModal: React.FC<Props> = ({ onClose }) => {
   const [isSendingReset, setIsSendingReset] = useState(false);
   const [sendEmail, setSendEmail] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+
+  // 摺疊狀態
+  const [expandUpcoming, setExpandUpcoming] = useState(false);
+  const [expandHistory, setExpandHistory] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -40,11 +45,62 @@ export const StudentDirectoryModal: React.FC<Props> = ({ onClose }) => {
 
   const isEditing = !!selectedStudentId || isCreating;
 
+  // 計算選中學生的紀錄
+  const studentBookings = useMemo(() => {
+    if (!selectedStudentId) return { upcoming: [], history: [] };
+    
+    const now = new Date();
+    const all = allClassesHistory.flatMap(cls => {
+      if (!cls.bookings) return [];
+      const bookings = cls.bookings as Record<string, string[]>;
+      return Object.entries(bookings)
+          .filter(([dateKey, userIds]) => userIds.includes(selectedStudentId))
+          .map(([dateKey]) => {
+              const [y, m, d] = dateKey.split('-').map(Number);
+              return { 
+                  id: cls.id, 
+                  title: cls.title, 
+                  location: cls.location, 
+                  startTime: cls.startTimeStr, 
+                  dateObj: new Date(y, m - 1, d), 
+                  dateKey 
+              };
+          });
+    });
+
+    const upcoming = all.filter(b => {
+        const [h, m] = b.startTime.split(':').map(Number);
+        const start = new Date(b.dateObj);
+        start.setHours(h, m, 0, 0);
+        return start >= now;
+    }).sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
+
+    const history = all.filter(b => {
+        const [h, m] = b.startTime.split(':').map(Number);
+        const start = new Date(b.dateObj);
+        start.setHours(h, m, 0, 0);
+        return start < now;
+    }).sort((a, b) => b.dateObj.getTime() - a.dateObj.getTime());
+
+    return { upcoming, history };
+  }, [allClassesHistory, selectedStudentId]);
+
+  const handleToggleHistory = async () => {
+    if (!expandHistory) {
+        setIsLoadingHistory(true);
+        await fetchArchivedClasses();
+        setIsLoadingHistory(false);
+    }
+    setExpandHistory(!expandHistory);
+  };
+
   const handleSelectStudent = (student: User) => {
     setSelectedStudentId(student.id); 
     setIsCreating(false); 
     setShowSuccess(false);
     setShowDeleteConfirm(false);
+    setExpandUpcoming(false);
+    setExpandHistory(false);
     setCreditsInput((student.credits || 0).toString());
     setFormData({
         name: student.name, 
@@ -96,7 +152,6 @@ export const StudentDirectoryModal: React.FC<Props> = ({ onClose }) => {
         const dataToSave = { ...cleanData, credits: isNaN(finalCredits) ? 0 : finalCredits, membershipType: formData.membershipType || 'CREDIT' };
         if (isCreating) {
             if (formData.email) {
-                // 使用設定好的預設密碼 hi123123
                 const tempPass = formData.password || "hi123123";
                 const result = await adminCreateStudent(formData.email, tempPass, dataToSave, sendEmail);
                 if (result.success) { 
@@ -183,7 +238,85 @@ export const StudentDirectoryModal: React.FC<Props> = ({ onClose }) => {
                          <input type="file" ref={fileInputRef} hidden accept="image/*" onChange={handleImageUpload} />
                          <div className="min-w-0 flex-1"><h1 className="text-2xl font-bold text-gray-800 truncate">{formData.name || (isCreating ? '新學生' : '未命名')}</h1><div className="mt-1"><p className="text-xs text-gray-400 font-bold uppercase tracking-widest">ID:</p><p className="text-[13px] text-gray-500 font-mono break-all leading-tight">{selectedStudentId || '系統自動產生'}</p></div></div>
                     </div>
+                    
                     <div className="space-y-8 max-w-lg mx-auto sm:mx-0">
+                        {/* 預約紀錄查看區 - 管理員專用摺疊面板 */}
+                        {!isCreating && (
+                            <div className="space-y-3">
+                                <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2 px-1">
+                                    <History size={16} className="text-zen-600" />
+                                    預約與課程紀錄
+                                </h3>
+                                
+                                {/* 未來預約 */}
+                                <div className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
+                                    <button 
+                                        onClick={() => setExpandUpcoming(!expandUpcoming)}
+                                        className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-100 transition-colors"
+                                    >
+                                        <span className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                                            <Calendar size={16} className="text-zen-500" />
+                                            即將開始 ({studentBookings.upcoming.length})
+                                        </span>
+                                        <ChevronDown size={18} className={`text-gray-400 transition-transform ${expandUpcoming ? 'rotate-180' : ''}`} />
+                                    </button>
+                                    {expandUpcoming && (
+                                        <div className="p-3 pt-0 space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
+                                            {studentBookings.upcoming.length === 0 ? (
+                                                <p className="text-center py-4 text-xs text-gray-400 italic">無未來預約</p>
+                                            ) : (
+                                                studentBookings.upcoming.map((b, idx) => (
+                                                    <div key={idx} className="flex justify-between items-center p-2.5 bg-white rounded-lg border border-gray-100 shadow-sm">
+                                                        <div>
+                                                            <p className="text-[10px] font-bold text-zen-600">{b.dateKey} {b.startTime}</p>
+                                                            <p className="text-xs font-bold text-gray-800">{b.title}</p>
+                                                        </div>
+                                                        <button 
+                                                            onClick={() => cancelClass(b.id, selectedStudentId!, b.dateObj)}
+                                                            className="text-red-500 hover:bg-red-50 p-1.5 rounded"
+                                                        >
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 歷史紀錄 */}
+                                <div className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
+                                    <button 
+                                        onClick={handleToggleHistory}
+                                        className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-100 transition-colors"
+                                    >
+                                        <span className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                                            <History size={16} className="text-gray-400" />
+                                            上課歷史 ({studentBookings.history.length})
+                                        </span>
+                                        {isLoadingHistory ? <Loader2 size={16} className="animate-spin text-zen-500" /> : <ChevronDown size={18} className={`text-gray-400 transition-transform ${expandHistory ? 'rotate-180' : ''}`} />}
+                                    </button>
+                                    {expandHistory && (
+                                        <div className="p-3 pt-0 space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
+                                            {studentBookings.history.length === 0 ? (
+                                                <p className="text-center py-4 text-xs text-gray-400 italic">無歷史紀錄</p>
+                                            ) : (
+                                                studentBookings.history.map((b, idx) => (
+                                                    <div key={idx} className="p-2.5 bg-white/50 rounded-lg border border-gray-100 flex justify-between items-center opacity-70">
+                                                        <div>
+                                                            <p className="text-[10px] font-mono text-gray-400">{b.dateKey}</p>
+                                                            <p className="text-xs font-bold text-gray-600">{b.title}</p>
+                                                        </div>
+                                                        <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">已結案</span>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
                         {isCreating && (
                             <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 space-y-3"><h4 className="text-sm font-bold text-blue-800 flex items-center gap-2"><Mail size={16}/> 帳號建立設定</h4><p className="text-xs text-blue-600">系統將設定初始密碼為 <span className="font-bold underline">hi123123</span>。</p><label className="flex items-center gap-3 p-2 bg-white rounded-lg border border-blue-200 cursor-pointer hover:bg-blue-50 transition-colors"><input type="checkbox" checked={sendEmail} onChange={(e) => setSendEmail(e.target.checked)} className="w-5 h-5 accent-blue-600"/><span className="text-sm font-bold text-blue-700">自動發送密碼設定信件</span></label></div>
                         )}

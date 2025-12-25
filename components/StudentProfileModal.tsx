@@ -1,7 +1,7 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { X, User as UserIcon, CreditCard, Calendar, Trash2, MapPin, Camera, Edit2, Save, Loader2, Calculator, ChevronRight, Coins, Infinity, Phone, History, Clock, UserCog, KeyRound, Mail } from 'lucide-react';
+import { X, User as UserIcon, CreditCard, Calendar, Trash2, MapPin, Camera, Edit2, Save, Loader2, Calculator, ChevronRight, Coins, Infinity, Phone, History, Clock, UserCog, KeyRound, Mail, ChevronDown } from 'lucide-react';
 import { UserRole } from '../types';
 import { SalaryCalculatorModal } from './SalaryCalculatorModal';
 
@@ -10,7 +10,7 @@ interface Props {
 }
 
 export const StudentProfileModal: React.FC<Props> = ({ onClose }) => {
-  const { currentUser, classes, cancelClass, students, updateUser, resetStudentPassword } = useApp();
+  const { currentUser, classes, allClassesHistory, cancelClass, students, updateUser, resetStudentPassword } = useApp();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [newName, setNewName] = useState(currentUser.name);
@@ -18,6 +18,9 @@ export const StudentProfileModal: React.FC<Props> = ({ onClose }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [isSendingReset, setIsSendingReset] = useState(false);
   const [showSalaryCalc, setShowSalaryCalc] = useState(false);
+
+  // 摺疊狀態
+  const [expandUpcoming, setExpandUpcoming] = useState(true);
 
   const liveStudentData = students.find(s => s.id === currentUser.id) || currentUser;
   const isStudent = currentUser.role === UserRole.STUDENT;
@@ -27,24 +30,34 @@ export const StudentProfileModal: React.FC<Props> = ({ onClose }) => {
   const credits = liveStudentData.credits || 0;
   const expiry = liveStudentData.unlimitedExpiry;
 
-  const allBookings = classes.flatMap(cls => {
+  // 取得該學生的未來預約紀錄
+  const upcomingBookings = useMemo(() => {
+    const now = new Date();
+    return allClassesHistory.flatMap(cls => {
       if (!cls.bookings) return [];
       const bookings = cls.bookings as Record<string, string[]>;
       return Object.entries(bookings)
           .filter(([dateKey, userIds]) => userIds.includes(currentUser.id))
           .map(([dateKey]) => {
               const [y, m, d] = dateKey.split('-').map(Number);
-              return { id: cls.id, title: cls.title, location: cls.location, startTime: cls.startTimeStr, dayOfWeek: cls.dayOfWeek, dateObj: new Date(y, m - 1, d), dateKey };
-          });
-  });
+              const [h, min] = cls.startTimeStr.split(':').map(Number);
+              const classStart = new Date(y, m - 1, d, h, min);
+              
+              if (classStart < now) return null; // 排除過去的紀錄
 
-  const now = new Date();
-  const upcomingBookings = allBookings.filter(b => {
-      const [h, m] = b.startTime.split(':').map(Number);
-      const classStart = new Date(b.dateObj);
-      classStart.setHours(h, m, 0, 0);
-      return classStart >= now;
-  }).sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
+              return { 
+                  id: cls.id, 
+                  title: cls.title, 
+                  location: cls.location, 
+                  startTime: cls.startTimeStr, 
+                  dayOfWeek: cls.dayOfWeek, 
+                  dateObj: new Date(y, m - 1, d), 
+                  dateKey,
+                  pointsCost: cls.pointsCost ?? 1
+              };
+          }).filter(Boolean) as any[];
+    }).sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
+  }, [allClassesHistory, currentUser.id]);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -83,7 +96,7 @@ export const StudentProfileModal: React.FC<Props> = ({ onClose }) => {
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[85vh]">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
         <div className="bg-zen-600 p-6 text-white relative shrink-0">
             <button onClick={onClose} className="absolute top-4 right-4 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 p-1.5 rounded-full transition-colors z-10"><X size={20} /></button>
             <div className="flex items-center gap-4">
@@ -109,12 +122,49 @@ export const StudentProfileModal: React.FC<Props> = ({ onClose }) => {
                     <button onClick={() => setShowSalaryCalc(true)} className="w-full bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:border-zen-300 transition-all group text-left flex items-center justify-between"><div className="flex items-center gap-4"><div className="w-12 h-12 bg-zen-50 rounded-full flex items-center justify-center text-zen-600 group-hover:bg-zen-600 group-hover:text-white transition-colors"><Calculator size={24} /></div><div><h4 className="font-bold text-gray-800 text-lg group-hover:text-zen-700">薪資計算中心</h4><p className="text-gray-500 text-sm">統計講師時數與計算月薪</p></div></div><ChevronRight className="text-gray-300 group-hover:text-zen-500" /></button>
                 </div>
             ) : (
-                <div className="p-6 space-y-8">
+                <div className="p-6 space-y-4">
+                    {/* 即將開始 - 摺疊式 */}
+                    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                        <button 
+                            onClick={() => setExpandUpcoming(!expandUpcoming)}
+                            className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                        >
+                            <div className="flex items-center gap-2 text-gray-800 font-bold">
+                                <Calendar className="text-zen-600" size={18} />
+                                您的預約 ({upcomingBookings.length})
+                            </div>
+                            <ChevronDown size={18} className={`text-gray-400 transition-transform ${expandUpcoming ? 'rotate-180' : ''}`} />
+                        </button>
+                        
+                        {expandUpcoming && (
+                            <div className="p-4 pt-0 space-y-3">
+                                {upcomingBookings.length === 0 ? (
+                                    <p className="text-center py-4 text-gray-400 text-xs italic">尚無即將開始的預約</p>
+                                ) : (
+                                    upcomingBookings.map((booking, idx) => {
+                                        const dayName = ['週日','週一','週二','週三','週四','週五','週六'][booking.dayOfWeek === 7 ? 0 : booking.dayOfWeek];
+                                        return (
+                                            <div key={idx} className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex justify-between items-center">
+                                                <div>
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-zen-500 text-white">{dayName} {booking.startTime}</span>
+                                                        <span className="text-gray-400 text-[10px]">{booking.dateKey}</span>
+                                                    </div>
+                                                    <h4 className="font-bold text-sm text-gray-800">{booking.title}</h4>
+                                                </div>
+                                                <button onClick={() => cancelClass(booking.id, undefined, booking.dateObj)} className="text-red-400 hover:text-red-600 p-2"><Trash2 size={16} /></button>
+                                            </div>
+                                        );
+                                    })
+                                )}
+                            </div>
+                        )}
+                    </div>
+
                     {/* Security Section */}
                     <div>
-                        <h3 className="text-gray-800 font-bold mb-4 flex items-center gap-2"><KeyRound className="text-zen-600" size={20} />帳號安全</h3>
+                        <h3 className="text-gray-800 font-bold mb-3 flex items-center gap-2"><KeyRound className="text-zen-600" size={20} />帳號安全</h3>
                         <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm space-y-3">
-                            <p className="text-xs text-gray-500">若您想要更改密碼，可以點擊下方按鈕獲取重設連結。</p>
                             <button 
                                 onClick={handleSendResetEmail}
                                 disabled={isSendingReset}
@@ -124,21 +174,6 @@ export const StudentProfileModal: React.FC<Props> = ({ onClose }) => {
                                 寄送密碼重設信件
                             </button>
                         </div>
-                    </div>
-
-                    <div><h3 className="text-gray-800 font-bold mb-4 flex items-center gap-2"><Calendar className="text-zen-600" size={20} />即將開始 ({upcomingBookings.length})</h3>
-                        {upcomingBookings.length === 0 ? (
-                            <div className="text-center py-8 bg-white rounded-xl border border-dashed border-gray-300"><p className="text-gray-400 text-sm mb-2">目前沒有預約未來課程</p><button onClick={onClose} className="text-zen-600 font-bold text-sm hover:underline">去逛逛課表</button></div>
-                        ) : (
-                            <div className="space-y-3">
-                                {upcomingBookings.map((booking, idx) => {
-                                    const dayName = ['週日','週一','週二','週三','週四','週五','週六'][booking.dayOfWeek === 7 ? 0 : booking.dayOfWeek];
-                                    return (
-                                        <div key={idx} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:border-zen-300 transition-colors"><div className="flex justify-between items-start"><div><div className="flex items-center gap-2 mb-1"><span className="text-xs font-bold px-2 py-0.5 rounded-full bg-zen-100 text-zen-700">{dayName} {booking.startTime}</span><span className="text-gray-400 text-xs">{booking.dateObj.toLocaleDateString('zh-TW', {month:'numeric', day:'numeric'})}</span></div><h4 className="font-bold text-lg text-gray-800">{booking.title}</h4><p className="text-gray-500 text-xs flex items-center gap-1 mt-1"><MapPin size={12}/> {booking.location}</p></div><button onClick={() => cancelClass(booking.id, undefined, booking.dateObj)} className="text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors"><Trash2 size={18} /></button></div></div>
-                                    );
-                                })}
-                            </div>
-                        )}
                     </div>
                 </div>
             )}
