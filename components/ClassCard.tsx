@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ClassSession, Instructor, UserRole } from '../types';
-import { AlertCircle, X, Pencil, Clock, LogIn, CreditCard, MapPin, Loader2, Coins, Save, Users, User, Settings, UserCog } from 'lucide-react';
+import { AlertCircle, X, Pencil, Clock, LogIn, CreditCard, MapPin, Loader2, Coins, Save, Users, User, Settings, UserCog, ExternalLink } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 
 interface ClassCardProps {
@@ -23,7 +23,7 @@ export const ClassCard: React.FC<ClassCardProps> = ({
     isCompact = false,
     displayAsSubstitute
 }) => {
-  const { currentUser, students, setLoginModalOpen, formatDateKey, updateClass } = useApp();
+  const { currentUser, students, setLoginModalOpen, setTopUpModalOpen, formatDateKey, updateClass } = useApp();
   const [isLoading, setIsLoading] = useState(false);
 
   // Description Editing State
@@ -48,8 +48,6 @@ export const ClassCard: React.FC<ClassCardProps> = ({
   const isBooked = dailyBookings.includes(currentUser.id);
   
   // Calculate valid students only (exclude ghosts) from the daily list
-  // If we have student data (Logged in), we filter ghosts.
-  // If we don't (Guest), we trust the raw count.
   const validEnrolledCount = students.length > 0 
       ? dailyBookings.filter(id => students.some(s => s.id === id)).length
       : dailyBookings.length;
@@ -114,6 +112,13 @@ export const ClassCard: React.FC<ClassCardProps> = ({
           setLoginModalOpen(true);
           return;
       }
+
+      // 特殊邏輯：如果是點數不足，則開啟購課視窗
+      if (isStudent && isInsufficient && !isBooked && !isPast && !isTooEarly && !isFull && !isExpiredForClass) {
+          setTopUpModalOpen(true);
+          return;
+      }
+
       if (isPast && !isAdmin) return;
 
       setIsLoading(true);
@@ -150,7 +155,6 @@ export const ClassCard: React.FC<ClassCardProps> = ({
 
       // 2. Guest/Student Logic
       if (isPast && !isBooked) return null;
-      // FIX: Added whitespace-nowrap and adjusted padding/text-size to prevent wrapping
       if (isPast && isBooked) return <span className="text-gray-400 text-xs font-bold bg-gray-100 px-2 py-1 rounded-lg whitespace-nowrap">已結束</span>;
 
       if (isBooked) {
@@ -174,44 +178,47 @@ export const ClassCard: React.FC<ClassCardProps> = ({
       }
 
       // Render Booking Button
-      // Check constraints
       let disabled = false;
       let label = '預約';
       let subLabel = '';
+      let isTopUpStyle = false;
       
       if (isStudent) {
            if (isTooEarly) {
-               // Too Early
                disabled = true;
                label = '未開放';
-               subLabel = ''; // Just show "未開放" as requested
+               subLabel = ''; 
            } else if (isExpiredForClass) {
-               // Expired Unlimited (Checked against class date)
                disabled = true;
                label = '會籍過期';
            } else if (isInsufficient) {
-               // Not enough credits
-               disabled = true;
-               label = '點數不足';
-               subLabel = `需 ${pointsCost} 點`;
+               // 改為引導購課
+               disabled = false;
+               label = '購課';
+               subLabel = ''; // 移除點數不足提示
+               isTopUpStyle = true;
            }
       }
 
       return (
           <button 
-              onClick={disabled ? undefined : handleActionClick}
+              onClick={handleActionClick}
               disabled={isLoading || disabled}
               className={`w-full py-2.5 rounded-xl font-bold text-sm shadow-md transition-all flex flex-col items-center justify-center leading-none gap-1
                   ${disabled 
                       ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200 shadow-none' 
-                      : 'bg-zen-600 text-white hover:bg-zen-700 active:scale-95 shadow-zen-200'
+                      : isTopUpStyle 
+                        ? 'bg-amber-100 text-amber-700 border border-amber-200 hover:bg-amber-200 shadow-amber-100'
+                        : 'bg-zen-600 text-white hover:bg-zen-700 active:scale-95 shadow-zen-200'
                   }`}
           >
               {isLoading ? (
                   <Loader2 className="animate-spin" size={16}/>
               ) : (
                   <>
-                      <span>{label}</span>
+                      <span className="flex items-center gap-1">
+                        {label} {isTopUpStyle && <ExternalLink size={12}/>}
+                      </span>
                       {subLabel && <span className="text-[10px] opacity-80 font-medium">{subLabel}</span>}
                   </>
               )}
@@ -220,27 +227,18 @@ export const ClassCard: React.FC<ClassCardProps> = ({
   };
 
   // ----------------------------------------------------------------------
-  // COMPACT VIEW (Mobile Friendly / List Style)
+  // COMPACT VIEW
   // ----------------------------------------------------------------------
   if (isCompact) {
-      // Styling logic for compact
-      let containerClass = "bg-white border-gray-200"; // Default
+      let containerClass = "bg-white border-gray-200"; 
       let timeBgClass = "bg-gray-50 border-gray-100";
       
       if (displayAsSubstitute) {
-          // Yellow styling base for SUBSTITUTE
           containerClass = "bg-[#fffdf5] border-amber-400 shadow-sm"; 
           timeBgClass = "bg-amber-100/50 border-amber-200";
-          
-          if (isBooked && !isAdmin) {
-              // Sub + Booked: Add Green Ring
-              containerClass += " ring-2 ring-zen-500 border-transparent";
-          } else {
-              // Just Sub
-              containerClass += " ring-1 ring-amber-200";
-          }
+          if (isBooked && !isAdmin) containerClass += " ring-2 ring-zen-500 border-transparent";
+          else containerClass += " ring-1 ring-amber-200";
       } else if (isBooked && !isAdmin) {
-          // Normal Booked
           containerClass = "border-zen-500 ring-1 ring-zen-500 bg-zen-50/30";
       }
 
@@ -252,7 +250,6 @@ export const ClassCard: React.FC<ClassCardProps> = ({
                 ${containerClass}
             `}
         >
-             {/* Admin Settings Button (Top Right) */}
              {isAdmin && onEdit && (
                 <button 
                     onClick={(e) => { e.stopPropagation(); onEdit(); }}
@@ -263,22 +260,17 @@ export const ClassCard: React.FC<ClassCardProps> = ({
                 </button>
             )}
 
-            {/* Left: Time Stack */}
             <div className={`w-[85px] flex flex-col items-center justify-center border-r px-2 py-3 shrink-0 ${timeBgClass}`}>
                 <span className="text-xl font-black text-gray-800 leading-none">{startTimeDisplay}</span>
                 <span className="text-xs font-medium text-gray-400 my-1">-</span>
                 <span className="text-lg font-bold text-gray-500 leading-none">{endTimeDisplay}</span>
             </div>
 
-            {/* Middle: Content */}
             <div className="flex-1 p-3 min-w-0 flex flex-col justify-center">
-                {/* 1. Title Row - No truncation, allow wrap */}
                 <div className="flex items-start justify-between gap-2 mb-1.5">
                     <h3 className="font-bold text-lg text-gray-900 leading-tight break-words">
                         {session.title}
                     </h3>
-                    
-                    {/* Status Badge (Sub) */}
                     <div className="shrink-0 flex gap-1">
                         {displayAsSubstitute && (
                             <span className="bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm flex items-center gap-0.5">
@@ -287,28 +279,22 @@ export const ClassCard: React.FC<ClassCardProps> = ({
                         )}
                     </div>
                 </div>
-                
-                {/* 2. Metadata Row */}
                 <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
-                     {/* Instructor Name (Now in second row) */}
                      <span className="font-bold text-zen-700 text-sm mr-1">
                         {instructor.name}
                      </span>
-                     
                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${difficultyColor}`}>
                         {difficultyLabel}
                      </span>
                      <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-0.5">
                         <Coins size={10} /> {pointsCost}
                      </span>
-                     {/* Enrollment Count */}
                      <span className="text-xs text-gray-400 font-medium">
                         ({validEnrolledCount}/{session.capacity}人)
                      </span>
                 </div>
             </div>
 
-            {/* Right: Action Button (Vertical Strip) */}
             <div className="w-[80px] p-2 flex items-center justify-center border-l border-gray-100 bg-white/50">
                 <ActionButton />
             </div>
@@ -317,21 +303,13 @@ export const ClassCard: React.FC<ClassCardProps> = ({
   }
 
   // ----------------------------------------------------------------------
-  // NORMAL VIEW (Split Layout)
+  // NORMAL VIEW
   // ----------------------------------------------------------------------
-  
-  // Normal View Styling Logic
-  let normalContainerClass = "bg-white border-gray-200"; // Default White
-  
+  let normalContainerClass = "bg-white border-gray-200"; 
   if (displayAsSubstitute) {
-      // Substitute Style (Yellow Priority)
       normalContainerClass = "bg-[#fffdf5] border-amber-400";
-      if (isBooked && !isAdmin) {
-          // Sub + Booked: Yellow BG + Green Ring
-          normalContainerClass += " ring-2 ring-zen-500 border-transparent";
-      }
+      if (isBooked && !isAdmin) normalContainerClass += " ring-2 ring-zen-500 border-transparent";
   } else if (isBooked && !isAdmin) {
-      // Booked Style (Green)
       normalContainerClass = "bg-zen-50/20 border-transparent ring-2 ring-zen-500";
   }
 
@@ -343,14 +321,12 @@ export const ClassCard: React.FC<ClassCardProps> = ({
             ${normalContainerClass}
         `}
     >
-        {/* Substitute Badge */}
         {displayAsSubstitute && (
             <div className="absolute top-0 left-0 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-br-xl z-20 shadow-sm flex items-center gap-1">
                 <AlertCircle size={12} /> 代課
             </div>
         )}
 
-        {/* Admin Settings Button (Top Right) */}
         {isAdmin && onEdit && (
             <button 
                 onClick={(e) => { e.stopPropagation(); onEdit(); }}
@@ -361,11 +337,7 @@ export const ClassCard: React.FC<ClassCardProps> = ({
             </button>
         )}
 
-        {/* --- LEFT COLUMN (35%) --- */}
-        {/* Contains: Time, Badges, Instructor, Action Button */}
         <div className="w-[35%] bg-gray-50/50 border-r border-gray-100 p-4 flex flex-col justify-between shrink-0">
-             
-             {/* Time Pill */}
              <div className="bg-white border border-gray-200 rounded-lg p-2 text-center mb-3 shadow-sm">
                  <div className="text-2xl font-black text-gray-800 leading-none mb-1">
                     {startTimeDisplay}
@@ -374,8 +346,6 @@ export const ClassCard: React.FC<ClassCardProps> = ({
                     {endTimeDisplay}
                  </div>
              </div>
-
-             {/* Instructor Info */}
              <div className="flex flex-col items-center text-center mb-3">
                  <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-sm mb-1">
                     {instructor.imageUrl ? (
@@ -386,7 +356,6 @@ export const ClassCard: React.FC<ClassCardProps> = ({
                         </div>
                     )}
                  </div>
-                 {/* Name - No line clamp */}
                  <span className="font-bold text-gray-800 text-sm leading-tight px-1">
                     {instructor.name}
                  </span>
@@ -394,25 +363,16 @@ export const ClassCard: React.FC<ClassCardProps> = ({
                     {displayAsSubstitute ? '代課老師' : '授課老師'}
                  </span>
              </div>
-
-             {/* Action Button at bottom of left column */}
              <div className="mt-auto">
                  <ActionButton />
              </div>
         </div>
 
-        {/* --- RIGHT COLUMN (65%) --- */}
-        {/* Contains: Title (Top), Badges (Sub-header), Description (Body) */}
         <div className="w-[65%] p-5 flex flex-col relative">
-            
-            {/* Header Area */}
             <div className="mb-3 pr-8">
-                {/* 1. Title - Large & Multiline - MOVED HERE to prevent truncation */}
                 <h3 className="text-2xl font-black text-gray-900 leading-tight mb-2 break-words">
                     {session.title}
                 </h3>
-
-                {/* 2. Badges Row */}
                 <div className="flex flex-wrap gap-2">
                     <span className={`px-2 py-0.5 rounded-md text-xs font-bold ${difficultyColor}`}>
                         {difficultyLabel}
@@ -425,10 +385,7 @@ export const ClassCard: React.FC<ClassCardProps> = ({
                     </span>
                 </div>
             </div>
-
-            {/* Description Area (Takes remaining height) */}
             <div className="flex-1 min-h-[60px] relative group/desc">
-                {/* Admin Editing Overlay - NOW VISIBLE GREEN BUTTON */}
                 {isAdmin && !isEditingDesc && (
                     <button 
                         onClick={(e) => { e.stopPropagation(); setIsEditingDesc(true); }}
@@ -438,7 +395,6 @@ export const ClassCard: React.FC<ClassCardProps> = ({
                         <Pencil size={14} />
                     </button>
                 )}
-
                 {isEditingDesc ? (
                     <div className="h-full flex flex-col gap-2" onClick={e => e.stopPropagation()}>
                         <textarea 
@@ -457,16 +413,10 @@ export const ClassCard: React.FC<ClassCardProps> = ({
                     </div>
                 ) : (
                     <div className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap h-full overflow-y-auto max-h-[120px] custom-scrollbar pr-8">
-                        {session.description ? (
-                            session.description
-                        ) : (
-                            <span className="text-gray-300 italic text-xs">尚無簡介...</span>
-                        )}
+                        {session.description ? session.description : <span className="text-gray-300 italic text-xs">尚無簡介...</span>}
                     </div>
                 )}
             </div>
-
-            {/* Location (Bottom Right Corner) - Moved slightly to avoid overlap with pencil if needed */}
             <div className="absolute bottom-3 left-0 text-[10px] text-gray-400 flex items-center gap-1 bg-white/50 px-2 py-1 rounded-full">
                 <MapPin size={10} /> {session.location}
             </div>

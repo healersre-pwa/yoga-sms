@@ -73,6 +73,8 @@ export interface AppContextType extends AppState {
   validateUser: (username: string, password: string) => User | null;
   isLoginModalOpen: boolean;
   setLoginModalOpen: (isOpen: boolean) => void;
+  isTopUpModalOpen: boolean;
+  setTopUpModalOpen: (isOpen: boolean) => void;
   registerStudent: (userData: Partial<User>) => Promise<{ success: boolean; message?: string }>;
   adminCreateStudent: (email: string, tempPass: string, userData: Partial<User>, sendEmailNotification?: boolean) => Promise<{ success: boolean; message?: string }>;
   loginWithGoogle: () => Promise<{ status: 'SUCCESS' | 'NEEDS_PHONE' | 'ERROR'; message?: string }>;

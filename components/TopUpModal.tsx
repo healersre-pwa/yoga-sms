@@ -52,7 +52,7 @@ export const TopUpModal: React.FC<Props> = ({ onClose }) => {
         <div className="bg-zen-600 p-5 flex justify-between items-center text-white shrink-0">
             <h2 className="text-xl font-bold flex items-center gap-2">
                 <CreditCard size={24} />
-                儲值中心
+                購課方案
             </h2>
             <button onClick={onClose} className="p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors">
                 <X size={20} />
@@ -84,7 +84,7 @@ export const TopUpModal: React.FC<Props> = ({ onClose }) => {
                     </div>
                     <div className="bg-gradient-to-r from-gray-800 to-gray-700 p-4 rounded-xl shadow-md text-white">
                         <div className="flex justify-between items-center mb-1">
-                            <span className="font-bold text-white">月費吃到飽</span>
+                            <span className="font-bold text-white">課程自由</span>
                             <span className="text-yellow-400 font-bold">$3,800 / 月</span>
                         </div>
                         <p className="text-xs text-gray-300">30天內不限堂數，適合每週上課 3 次以上的精進同學</p>

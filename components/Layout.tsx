@@ -8,10 +8,9 @@ import { StudentProfileModal } from './StudentProfileModal';
 import { TopUpModal } from './TopUpModal';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { currentUser, logout, isLoginModalOpen, setLoginModalOpen, appLogo, appBackgroundImage, updateAppLogo, isLoading } = useApp();
+  const { currentUser, logout, isLoginModalOpen, setLoginModalOpen, isTopUpModalOpen, setTopUpModalOpen, appLogo, appBackgroundImage, updateAppLogo, isLoading } = useApp();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false); 
-  const [isTopUpOpen, setIsTopUpOpen] = useState(false);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [isSplashVisible, setIsSplashVisible] = useState(true);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -45,7 +44,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const handleLogout = () => { logout(); setIsMenuOpen(false); };
   const handleLoginClick = () => { setLoginModalOpen(true); setIsMenuOpen(false); };
   const handleProfileClick = () => { setIsProfileOpen(true); setIsMenuOpen(false); }
-  const handleTopUpClick = () => { setIsTopUpOpen(true); setIsMenuOpen(false); }
+  const handleTopUpClick = () => { setTopUpModalOpen(true); setIsMenuOpen(false); }
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
@@ -189,7 +188,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                                 <>
                                     <div className="px-4 py-2 text-xs text-gray-400 font-semibold uppercase tracking-wider">帳號管理</div>
                                     <button onClick={handleProfileClick} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-zen-50 hover:text-zen-600 flex items-center gap-2 font-medium border-b border-gray-100">{currentUser.role === UserRole.STUDENT ? <CalendarDays size={16} /> : <UserCircle size={16} />}管理 / 查看</button>
-                                    {currentUser.role === UserRole.STUDENT && <button onClick={handleTopUpClick} className="w-full text-left px-4 py-2.5 text-sm text-zen-700 hover:bg-zen-50 flex items-center gap-2 font-bold border-b border-gray-100 bg-zen-50/50"><CreditCard size={16} />前往儲值</button>}
+                                    {currentUser.role === UserRole.STUDENT && <button onClick={handleTopUpClick} className="w-full text-left px-4 py-2.5 text-sm text-zen-700 hover:bg-zen-50 flex items-center gap-2 font-bold border-b border-gray-100 bg-zen-50/50"><CreditCard size={16} />購買課程</button>}
                                     <button onClick={handleLogout} className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 font-medium"><LogOut size={16} />登出</button>
                                 </>
                             )}
@@ -206,7 +205,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       </div>
       <LoginModal isOpen={isLoginModalOpen} onClose={() => setLoginModalOpen(false)} />
       {isProfileOpen && <StudentProfileModal onClose={() => setIsProfileOpen(false)} />}
-      {isTopUpOpen && <TopUpModal onClose={() => setIsTopUpOpen(false)} />}
+      {isTopUpModalOpen && <TopUpModal onClose={() => setTopUpModalOpen(false)} />}
     </div>
   );
 };

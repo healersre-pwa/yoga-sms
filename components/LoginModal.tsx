@@ -138,7 +138,7 @@ export const LoginModal: React.FC<Props> = ({ isOpen, onClose }) => {
                     <form onSubmit={handleForgotSubmit} className="space-y-4">
                         <div className="relative">
                             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                            <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-zen-500 focus:bg-white outline-none" placeholder="請輸入註冊的 Email" required />
+                            <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-zen-500 focus:bg-white outline-none text-gray-900" placeholder="請輸入註冊的 Email" required />
                         </div>
                         <button type="submit" disabled={isProcessing} className="w-full bg-zen-600 text-white font-bold py-3.5 rounded-xl hover:bg-zen-700 shadow-lg shadow-zen-200 disabled:opacity-70 transition-all flex items-center justify-center gap-2">
                             {isProcessing ? '發送中...' : '發送重設郵件'}
@@ -196,13 +196,13 @@ export const LoginModal: React.FC<Props> = ({ isOpen, onClose }) => {
                         <form onSubmit={handleRegisterSubmit} className="space-y-4">
                             <div className="text-center mb-4"><h3 className="text-xl font-bold text-gray-800">建立新帳號</h3><p className="text-xs text-gray-500">填寫基本資料以開始使用</p></div>
                             <div className="grid grid-cols-2 gap-3">
-                                <input type="text" value={regName} onChange={e => setRegName(e.target.value)} className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-zen-500 outline-none" placeholder="姓名" required />
-                                <input type="tel" value={regPhone} onChange={e => setRegPhone(e.target.value)} className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-zen-500 outline-none" placeholder="手機" />
+                                <input type="text" value={regName} onChange={e => setRegName(e.target.value)} className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-zen-500 outline-none text-gray-900" placeholder="姓名" required />
+                                <input type="tel" value={regPhone} onChange={e => setRegPhone(e.target.value)} className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-zen-500 outline-none text-gray-900" placeholder="手機" />
                             </div>
-                            <input type="email" value={regEmail} onChange={e => setRegEmail(e.target.value)} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-zen-500 outline-none" placeholder="Email (帳號)" required />
+                            <input type="email" value={regEmail} onChange={e => setRegEmail(e.target.value)} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-zen-500 outline-none text-gray-900" placeholder="Email (帳號)" required />
                             <div className="grid grid-cols-2 gap-3">
-                                <input type="password" value={regPassword} onChange={e => setRegPassword(e.target.value)} className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-zen-500 outline-none font-mono text-sm" placeholder="密碼(6碼)" required />
-                                <input type="password" value={regConfirmPassword} onChange={e => setRegConfirmPassword(e.target.value)} className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-zen-500 outline-none font-mono text-sm" placeholder="確認密碼" required />
+                                <input type="password" value={regPassword} onChange={e => setRegPassword(e.target.value)} className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-zen-500 outline-none font-mono text-sm text-gray-900" placeholder="密碼(6碼)" required />
+                                <input type="password" value={regConfirmPassword} onChange={e => setRegConfirmPassword(e.target.value)} className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-zen-500 outline-none font-mono text-sm text-gray-900" placeholder="確認密碼" required />
                             </div>
                             <button type="submit" disabled={isProcessing} className="w-full bg-zen-700 text-white font-bold py-3.5 rounded-xl hover:bg-zen-800 shadow-lg shadow-zen-200 transition-all mt-4 disabled:opacity-50 flex items-center justify-center gap-2">{isProcessing ? '註冊中...' : '註冊並登入'}</button>
                             <div className="relative my-4"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200"></div></div><div className="relative flex justify-center text-sm"><span className="px-2 bg-white text-gray-500 font-medium">或使用 Google 帳號</span></div></div>

@@ -70,6 +70,7 @@ const safeSubtract = (a: number, b: number) => {
 export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User>(GUEST_USER);
   const [isLoginModalOpen, setLoginModalOpen] = useState(false);
+  const [isTopUpModalOpen, setTopUpModalOpen] = useState(false);
   const [activeClasses, setActiveClasses] = useState<ClassSession[]>([]);
   const [archivedClasses, setArchivedClasses] = useState<ClassSession[]>([]);
   const [hasFetchedArchived, setHasFetchedArchived] = useState(false);
@@ -505,7 +506,7 @@ export const AppProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
       addStudent, updateStudent, updateUser, deleteStudent, resetStudentPassword, forgotPassword, updateAppLogo, updateAppBackgroundImage, updateAppIcons,
       getNextClassDate, formatDateKey, checkInstructorConflict, isLoading, dataSource,
       fetchArchivedClasses, pruneArchivedClasses, cleanupInactiveStudents, notifyAdminPayment, adminCreateStudent,
-      loginWithGoogle, registerGoogleUser, isLoginModalOpen
+      loginWithGoogle, registerGoogleUser, isLoginModalOpen, isTopUpModalOpen, setTopUpModalOpen
     }}>
       {children}
     </AppContext.Provider>
